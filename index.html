@@ -1,0 +1,2503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="FlipFinder">
+  <meta name="theme-color" content="#00ff87">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlipFinder</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=Bebas+Neue&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+:root {
+  --bg: #080808;
+  --s1: #0f0f0f;
+  --s2: #161616;
+  --s3: #1e1e1e;
+  --s4: #262626;
+  --border: #2a2a2a;
+  --border2: #333;
+  --accent: #00ff87;
+  --accent2: #ff3d3d;
+  --accent3: #3d9eff;
+  --accent4: #ffcc00;
+  --text: #efefef;
+  --text2: #888;
+  --text3: #444;
+  --mono: 'IBM Plex Mono', monospace;
+  --display: 'Bebas Neue', sans-serif;
+  --body: 'IBM Plex Sans', sans-serif;
+  --green: #00ff87;
+  --red: #ff3d3d;
+  --yellow: #ffcc00;
+  --blue: #3d9eff;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--body);
+  min-height: 100vh;
+}
+
+/* scanline effect */
+body::after {
+  content:'';
+  position:fixed;
+  inset:0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,255,135,0.015) 2px,
+    rgba(0,255,135,0.015) 4px
+  );
+  pointer-events:none;
+  z-index:999;
+}
+
+/* HEADER */
+header {
+  position:sticky; top:0; z-index:100;
+  background: rgba(8,8,8,0.96);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(10px);
+  padding: 0 32px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo {
+  font-family: var(--display);
+  font-size: 26px;
+  letter-spacing: 0.12em;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--text3);
+}
+.logo-dot.live {
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%,100% { opacity:1; }
+  50% { opacity:0.4; }
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text3);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.hstat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+.hstat-val { color: var(--green); font-size: 14px; font-weight: 600; }
+.hstat-label { color: var(--text3); font-size: 9px; }
+
+/* MAIN */
+.main { max-width: 1600px; margin: 0 auto; padding: 32px; }
+
+/* SECTION HEADER */
+.sec-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.sec-num {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--green);
+  letter-spacing: 0.2em;
+  border: 1px solid rgba(0,255,135,0.3);
+  padding: 3px 8px;
+}
+.sec-title {
+  font-family: var(--display);
+  font-size: 22px;
+  letter-spacing: 0.1em;
+  color: var(--text);
+}
+.sec-line {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* UPLOAD */
+.upload-area {
+  border: 1px dashed var(--border2);
+  background: var(--s1);
+  padding: 40px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 32px;
+}
+.upload-area:hover, .upload-area.drag { border-color: var(--green); background: rgba(0,255,135,0.04); }
+.upload-icon { font-size: 32px; margin-bottom: 12px; opacity: 0.5; }
+.upload-title { font-family: var(--display); font-size: 28px; letter-spacing: 0.08em; margin-bottom: 6px; }
+.upload-sub { font-family: var(--mono); font-size: 11px; color: var(--text2); margin-bottom: 20px; letter-spacing: 0.05em; }
+.upload-cta {
+  display: inline-block;
+  background: var(--green);
+  color: #000;
+  font-family: var(--display);
+  font-size: 16px;
+  letter-spacing: 0.1em;
+  padding: 10px 32px;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s;
+}
+.upload-cta:hover { background: #fff; }
+input[type=file] { display:none; }
+
+/* TWO FILE UPLOAD */
+.upload-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.upload-card {
+  border: 1px dashed var(--border2);
+  background: var(--s1);
+  padding: 28px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+.upload-card:hover, .upload-card.drag { border-color: var(--green); background: rgba(0,255,135,0.04); }
+.upload-card.loaded { border-color: var(--green); border-style: solid; }
+.upload-card.loaded::after {
+  content: '✓ LOADED';
+  position: absolute;
+  top: 10px; right: 12px;
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--green);
+  letter-spacing: 0.1em;
+}
+.upload-card-title { font-family: var(--display); font-size: 18px; letter-spacing: 0.08em; margin-bottom: 6px; }
+.upload-card-sub { font-family: var(--mono); font-size: 10px; color: var(--text2); letter-spacing: 0.05em; margin-bottom: 14px; }
+.upload-card-btn {
+  background: var(--s3);
+  border: 1px solid var(--border2);
+  color: var(--text2);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  padding: 7px 20px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-transform: uppercase;
+}
+.upload-card-btn:hover { border-color: var(--green); color: var(--green); }
+
+/* FEE CONFIG */
+.fee-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+  margin-bottom: 32px;
+}
+.fee-card {
+  background: var(--s1);
+  border: 1px solid var(--border);
+  padding: 14px;
+}
+.fee-card label {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text3);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 8px;
+}
+.fee-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid var(--green);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 20px;
+  font-weight: 600;
+  padding: 4px 0;
+  outline: none;
+  text-align: right;
+}
+.fee-input:focus { border-bottom-color: var(--blue); }
+
+/* RUN BTN */
+.run-btn {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--green);
+  color: #000;
+  font-family: var(--display);
+  font-size: 22px;
+  letter-spacing: 0.12em;
+  padding: 16px 48px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-bottom: 48px;
+}
+.run-btn:hover { background: #fff; transform: translateY(-2px); }
+.run-btn:disabled { background: var(--s3); color: var(--text3); cursor: not-allowed; transform: none; }
+
+/* STATS BAR */
+.stats-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  margin-bottom: 28px;
+}
+.stat-cell { background: var(--s1); padding: 18px 20px; }
+.stat-val {
+  font-family: var(--display);
+  font-size: 40px;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.stat-val.g { color: var(--green); }
+.stat-val.y { color: var(--yellow); }
+.stat-val.b { color: var(--blue); }
+.stat-val.r { color: var(--red); }
+.stat-val.w { color: var(--text); }
+.stat-label { font-family: var(--mono); font-size: 9px; color: var(--text3); letter-spacing: 0.12em; text-transform: uppercase; }
+
+/* TABS */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
+  gap: 0;
+}
+.tab {
+  font-family: var(--display);
+  font-size: 16px;
+  letter-spacing: 0.1em;
+  padding: 12px 24px;
+  cursor: pointer;
+  color: var(--text3);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: all 0.15s;
+  text-transform: uppercase;
+}
+.tab:hover { color: var(--text2); }
+.tab.active { color: var(--green); border-bottom-color: var(--green); }
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
+
+/* FILTER BAR */
+.filter-bar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.fbtn {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  padding: 5px 12px;
+  border: 1px solid var(--border2);
+  background: transparent;
+  color: var(--text3);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-transform: uppercase;
+}
+.fbtn:hover, .fbtn.on { border-color: var(--green); color: var(--green); background: rgba(0,255,135,0.06); }
+.fbtn.cat { }
+.search-box {
+  margin-left: auto;
+  background: var(--s1);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 6px 14px;
+  outline: none;
+  width: 220px;
+}
+.search-box:focus { border-color: var(--green); }
+.search-box::placeholder { color: var(--text3); }
+.export-btn {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  padding: 6px 14px;
+  border: 1px solid var(--border2);
+  background: transparent;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-transform: uppercase;
+}
+.export-btn:hover { border-color: var(--blue); color: var(--blue); }
+
+/* TABLE */
+.tbl-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+thead tr { border-bottom: 2px solid var(--green); }
+th {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text3);
+  padding: 10px 12px;
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+}
+th:hover { color: var(--green); }
+th.sorted { color: var(--green); }
+td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+  white-space: nowrap;
+}
+tr:hover td { background: rgba(0,255,135,0.025); }
+
+.iname {
+  font-family: var(--body);
+  font-size: 13px;
+  font-weight: 500;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.isize {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--blue);
+  margin-top: 2px;
+}
+.icat {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text3);
+  margin-top: 1px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.mono { font-family: var(--mono); font-size: 11px; }
+.pos { color: var(--green); }
+.neg { color: var(--red); }
+.neu { color: var(--text2); }
+.dim { color: var(--text3); }
+
+.grade-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px; height: 32px;
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+}
+.ga { background: rgba(0,255,135,0.12); color: var(--green); border: 1px solid rgba(0,255,135,0.3); }
+.gb { background: rgba(255,204,0,0.1); color: var(--yellow); border: 1px solid rgba(255,204,0,0.3); }
+.gc { background: rgba(61,158,255,0.1); color: var(--blue); border: 1px solid rgba(61,158,255,0.3); }
+.gd { background: rgba(255,61,61,0.08); color: var(--red); border: 1px solid rgba(255,61,61,0.2); }
+
+.score-num {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.tag {
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border: 1px solid;
+  display: inline-block;
+  white-space: nowrap;
+}
+.tg { color: var(--green); border-color: rgba(0,255,135,0.3); background: rgba(0,255,135,0.07); }
+.ty { color: var(--yellow); border-color: rgba(255,204,0,0.3); background: rgba(255,204,0,0.07); }
+.tr { color: var(--red); border-color: rgba(255,61,61,0.3); background: rgba(255,61,61,0.07); }
+.tb { color: var(--blue); border-color: rgba(61,158,255,0.3); background: rgba(61,158,255,0.07); }
+
+/* DRAWER */
+.drawer {
+  display: none;
+  background: var(--s2);
+  border-top: 2px solid var(--green);
+  padding: 24px;
+}
+.drawer.open { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 24px; }
+.drawer h4 {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--green);
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border2);
+}
+.dr {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+}
+.dk { color: var(--text3); font-family: var(--mono); font-size: 9px; letter-spacing: 0.05em; }
+.dv { font-family: var(--mono); font-size: 11px; }
+
+.sbar-row { display:flex; align-items:center; gap:8px; padding:3px 0; }
+.sbar-lbl { font-family:var(--mono); font-size:8px; color:var(--text3); letter-spacing:0.06em; text-transform:uppercase; width:120px; flex-shrink:0; }
+.sbar-track { flex:1; height:3px; background:var(--border2); }
+.sbar-fill { height:100%; transition: width 0.5s ease; }
+.sbar-val { font-family:var(--mono); font-size:9px; color:var(--text2); width:16px; text-align:right; }
+
+/* CHAT */
+.chat-wrap { max-height:400px; overflow-y:auto; display:flex; flex-direction:column; gap:14px; padding:4px 0; margin-bottom:16px; }
+.chat-msg { display:flex; gap:10px; align-items:flex-start; }
+.cavatar { width:26px; height:26px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-size:8px; font-weight:700; letter-spacing:0.05em; }
+.cav-ai { background:var(--green); color:#000; }
+.cav-u { background:var(--s4); color:var(--text2); border:1px solid var(--border2); }
+.cbubble { background:var(--s2); border:1px solid var(--border); padding:10px 14px; font-size:12px; line-height:1.65; flex:1; max-width:700px; }
+.cbubble.user { background:var(--s3); margin-left:auto; }
+.chat-row { display:flex; gap:8px; }
+.chat-in { flex:1; background:var(--s1); border:1px solid var(--border2); border-bottom:2px solid var(--green); color:var(--text); font-family:var(--body); font-size:12px; padding:9px 14px; outline:none; }
+.chat-send { background:var(--green); color:#000; font-family:var(--display); font-size:14px; letter-spacing:0.1em; padding:9px 24px; border:none; cursor:pointer; transition:all 0.15s; }
+.chat-send:hover { background:#fff; }
+.chat-send:disabled { background:var(--s3); color:var(--text3); cursor:not-allowed; }
+.typing { font-family:var(--mono); font-size:10px; color:var(--text3); padding:3px 0; }
+
+/* EMPTY */
+.empty { text-align:center; padding:80px 40px; }
+.empty-big { font-family:var(--display); font-size:72px; color:var(--s3); letter-spacing:0.05em; margin-bottom:12px; }
+.empty-sub { font-family:var(--mono); font-size:11px; color:var(--text3); letter-spacing:0.05em; }
+
+/* LOADING */
+.loading {
+  display:none; position:fixed; inset:0;
+  background:rgba(8,8,8,0.94);
+  z-index:200; align-items:center; justify-content:center; flex-direction:column; gap:20px;
+  backdrop-filter:blur(6px);
+}
+.loading.show { display:flex; }
+.loading-title { font-family:var(--display); font-size:36px; letter-spacing:0.12em; color:var(--green); }
+.loading-sub { font-family:var(--mono); font-size:11px; color:var(--text2); letter-spacing:0.08em; }
+.prog-track { width:360px; height:2px; background:var(--border2); }
+.prog-bar { height:100%; background:var(--green); width:0%; transition:width 0.3s ease; }
+
+/* TOAST */
+.toast {
+  position:fixed; bottom:24px; right:24px;
+  background:var(--s2); border:1px solid var(--border2); border-left:3px solid var(--green);
+  padding:12px 18px; font-family:var(--mono); font-size:11px; z-index:300;
+  opacity:0; transform:translateY(8px); transition:all 0.25s; max-width:300px;
+}
+.toast.show { opacity:1; transform:translateY(0); }
+
+.section { padding-bottom: 40px; border-bottom: 1px solid var(--border); margin-bottom: 40px; }
+.hidden { display:none !important; }
+
+.copy-btn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:11px;padding:2px 5px;transition:color 0.15s;flex-shrink:0;}.copy-btn:hover,.copy-btn.copied{color:var(--green);}.iname-wrap{display:flex;align-items:flex-start;gap:2px;max-width:260px;}
+
+/* ── OPPORTUNITY FEED ─────────────────────────────── */
+.feed-header {
+  display:flex; align-items:center; gap:16px; margin-bottom:20px; flex-wrap:wrap;
+}
+.feed-date {
+  font-family:var(--mono); font-size:10px; color:var(--text3); letter-spacing:0.12em;
+  border:1px solid var(--border); padding:4px 10px;
+}
+.feed-grid {
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:12px; margin-bottom:32px;
+}
+.feed-card {
+  background:var(--s1); border:1px solid var(--border); padding:18px 20px;
+  cursor:pointer; transition:all 0.15s; position:relative; overflow:hidden;
+}
+.feed-card:hover { border-color:var(--border2); background:var(--s2); }
+.feed-card.grade-a { border-left:3px solid var(--green); }
+.feed-card.grade-b { border-left:3px solid var(--yellow); }
+.feed-card.grade-c { border-left:3px solid var(--blue); }
+.feed-rank {
+  position:absolute; top:12px; right:14px;
+  font-family:var(--mono); font-size:9px; color:var(--text3); letter-spacing:0.1em;
+}
+.feed-name { font-family:var(--body); font-weight:600; font-size:13px; color:var(--text); margin-bottom:3px; line-height:1.3; }
+.feed-size { font-family:var(--mono); font-size:9px; color:var(--text3); letter-spacing:0.08em; margin-bottom:10px; }
+.feed-metrics { display:flex; gap:16px; margin-bottom:10px; }
+.feed-metric { display:flex; flex-direction:column; gap:2px; }
+.feed-metric-val { font-family:var(--mono); font-size:15px; font-weight:600; }
+.feed-metric-val.pos { color:var(--green); }
+.feed-metric-val.neu { color:var(--text); }
+.feed-metric-val.neg { color:var(--red); }
+.feed-metric-label { font-family:var(--mono); font-size:8px; color:var(--text3); letter-spacing:0.1em; text-transform:uppercase; }
+.feed-tags { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+.feed-action {
+  margin-top:12px; padding-top:12px; border-top:1px solid var(--border);
+  font-family:var(--mono); font-size:10px; color:var(--text2); letter-spacing:0.04em;
+  display:flex; justify-content:space-between; align-items:center;
+}
+.bid-pill {
+  background:rgba(0,255,135,0.1); border:1px solid rgba(0,255,135,0.3);
+  color:var(--green); font-family:var(--mono); font-size:10px; padding:3px 10px;
+  letter-spacing:0.08em;
+}
+.feed-section-title {
+  font-family:var(--display); font-size:16px; letter-spacing:0.1em; color:var(--text3);
+  margin:28px 0 12px; text-transform:uppercase;
+}
+.feed-empty {
+  font-family:var(--mono); font-size:11px; color:var(--text3); padding:40px; text-align:center; border:1px dashed var(--border);
+}
+.refresh-btn {
+  font-family:var(--mono); font-size:10px; letter-spacing:0.08em; padding:6px 16px;
+  border:1px solid var(--border2); background:transparent; color:var(--text2);
+  cursor:pointer; transition:all 0.15s; text-transform:uppercase;
+}
+.refresh-btn:hover { border-color:var(--green); color:var(--green); }
+.feed-summary {
+  background:var(--s1); border:1px solid var(--border); padding:16px 20px;
+  font-family:var(--mono); font-size:11px; color:var(--text2); margin-bottom:24px;
+  display:flex; gap:24px; flex-wrap:wrap;
+}
+.feed-summary span { color:var(--text3); font-size:9px; display:block; letter-spacing:0.1em; }
+.feed-summary strong { color:var(--text); font-size:14px; display:block; }
+
+/* ── EXIT CONFIDENCE ──────────────────────────────── */
+.ec-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(380px,1fr)); gap:12px; margin-bottom:32px; }
+.ec-card {
+  background:var(--s1); border:1px solid var(--border); padding:18px 20px;
+}
+.ec-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; }
+.ec-name { font-weight:600; font-size:13px; color:var(--text); line-height:1.3; }
+.ec-size { font-family:var(--mono); font-size:9px; color:var(--text3); margin-top:2px; }
+.ec-score-ring {
+  width:52px; height:52px; border-radius:50%; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center; flex-direction:column;
+  border:2px solid; font-family:var(--mono); font-weight:700;
+}
+.ec-score-ring.high { border-color:var(--green); color:var(--green); }
+.ec-score-ring.mid  { border-color:var(--yellow); color:var(--yellow); }
+.ec-score-ring.low  { border-color:var(--red); color:var(--red); }
+.ec-score-num { font-size:18px; line-height:1; }
+.ec-score-label { font-size:7px; letter-spacing:0.1em; }
+.ec-bars { display:flex; flex-direction:column; gap:7px; margin-bottom:14px; }
+.ec-bar-row { display:flex; align-items:center; gap:10px; }
+.ec-bar-label { font-family:var(--mono); font-size:9px; color:var(--text3); width:100px; flex-shrink:0; letter-spacing:0.04em; }
+.ec-bar-track { flex:1; height:4px; background:var(--s4); border-radius:2px; }
+.ec-bar-fill { height:4px; border-radius:2px; transition:width 0.4s; }
+.ec-bar-val { font-family:var(--mono); font-size:9px; width:32px; text-align:right; flex-shrink:0; }
+.ec-verdict {
+  font-family:var(--mono); font-size:10px; padding:8px 10px;
+  border-left:2px solid; letter-spacing:0.04em; line-height:1.5;
+}
+.ec-verdict.high { border-color:var(--green); color:var(--green); background:rgba(0,255,135,0.05); }
+.ec-verdict.mid  { border-color:var(--yellow); color:var(--yellow); background:rgba(255,204,0,0.05); }
+.ec-verdict.low  { border-color:var(--red); color:var(--red); background:rgba(255,61,61,0.05); }
+.ec-filter-bar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:20px; }
+
+/* ── VELOCITY FORECAST ────────────────────────────── */
+.vel-header { display:flex; align-items:center; gap:12px; margin-bottom:24px; flex-wrap:wrap; }
+.vel-legend { display:flex; gap:16px; font-family:var(--mono); font-size:9px; color:var(--text3); letter-spacing:0.08em; }
+.vel-legend-item { display:flex; align-items:center; gap:6px; }
+.vel-legend-dot { width:8px; height:8px; border-radius:50%; }
+.vel-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(360px,1fr)); gap:12px; }
+.vel-card { background:var(--s1); border:1px solid var(--border); padding:18px 20px; }
+.vel-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; }
+.vel-name { font-weight:600; font-size:13px; line-height:1.3; }
+.vel-size { font-family:var(--mono); font-size:9px; color:var(--text3); margin-top:2px; }
+.vel-badge {
+  font-family:var(--display); font-size:12px; letter-spacing:0.1em; padding:4px 10px; flex-shrink:0;
+}
+.vel-badge.fast { background:rgba(0,255,135,0.15); color:var(--green); border:1px solid rgba(0,255,135,0.3); }
+.vel-badge.med  { background:rgba(255,204,0,0.15); color:var(--yellow); border:1px solid rgba(255,204,0,0.3); }
+.vel-badge.slow { background:rgba(255,61,61,0.15); color:var(--red); border:1px solid rgba(255,61,61,0.3); }
+.vel-timeline { position:relative; margin-bottom:14px; }
+.vel-track { height:6px; background:var(--s4); border-radius:3px; margin-bottom:6px; position:relative; }
+.vel-segment { position:absolute; height:6px; border-radius:3px; top:0; }
+.vel-milestones { display:flex; justify-content:space-between; font-family:var(--mono); font-size:8px; color:var(--text3); letter-spacing:0.06em; }
+.vel-stats { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:12px; }
+.vel-stat { background:var(--s2); padding:8px 10px; }
+.vel-stat-val { font-family:var(--mono); font-size:14px; font-weight:600; color:var(--text); }
+.vel-stat-label { font-family:var(--mono); font-size:8px; color:var(--text3); letter-spacing:0.08em; margin-top:2px; }
+.vel-insight { font-family:var(--mono); font-size:10px; color:var(--text2); line-height:1.5; letter-spacing:0.03em; }
+.vel-risk { margin-top:8px; font-family:var(--mono); font-size:9px; color:var(--red); letter-spacing:0.04em; }
+::-webkit-scrollbar { width:3px; height:3px; }
+::-webkit-scrollbar-track { background:var(--bg); }
+::-webkit-scrollbar-thumb { background:var(--border2); }
+::-webkit-scrollbar-thumb:hover { background:var(--green); }
+
+/* ── MOBILE RESPONSIVE ────────────────────────────── */
+@media (max-width: 768px) {
+
+  /* Header */
+  header { padding: 0 16px; height: 52px; }
+  .header-right { gap: 12px; }
+  .hstat-val { font-size: 12px; }
+  .hstat-label { font-size: 8px; }
+  /* Hide lowest-priority header stat on very small screens */
+  .hstat:last-child { display: none; }
+
+  /* Main padding */
+  .main { padding: 16px; }
+
+  /* Upload cards: stack vertically */
+  .upload-grid { grid-template-columns: 1fr; gap: 10px; }
+  .upload-card { padding: 20px; }
+
+  /* Fee grid: 2 columns instead of auto-fill */
+  .fee-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .fee-card { padding: 10px; }
+  .fee-input { font-size: 16px; } /* prevent iOS zoom on focus */
+
+  /* Run button */
+  .run-btn { width: 100%; justify-content: center; padding: 14px 24px; font-size: 18px; margin-bottom: 32px; }
+
+  /* Stats bar: 2-col grid */
+  .stats-bar { grid-template-columns: 1fr 1fr; }
+  .stat-val { font-size: 28px; }
+
+  /* Tab bar: horizontally scrollable, no wrap */
+  .tabs {
+    overflow-x: auto;
+    overflow-y: hidden;
+    flex-wrap: nowrap;
+    gap: 0;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 0;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    font-size: 11px;
+    padding: 10px 14px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    letter-spacing: 0.06em;
+  }
+
+  /* Filter bar: scroll horizontally */
+  .filter-bar {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 8px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 6px;
+  }
+  .filter-bar::-webkit-scrollbar { display: none; }
+  .search-box { min-width: 140px; width: 140px; margin-left: 0; }
+  .fbtn { white-space: nowrap; flex-shrink: 0; }
+  .export-btn { flex-shrink: 0; }
+
+  /* Table: switch to mobile card view */
+  .tbl-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table { font-size: 11px; min-width: 700px; }
+  th, td { padding: 8px 6px; }
+  .iname { font-size: 11px; max-width: 140px; white-space: normal; }
+  .iname-wrap { max-width: 160px; }
+
+  /* Drawer: single column */
+  .drawer.open { grid-template-columns: 1fr; gap: 16px; }
+
+  /* Section headers */
+  .sec-title { font-size: 16px; }
+
+  /* Feed cards: full width */
+  .feed-grid { grid-template-columns: 1fr; gap: 10px; }
+  .feed-card { padding: 14px 16px; }
+  .feed-metrics { gap: 10px; flex-wrap: wrap; }
+  .feed-metric-val { font-size: 13px; }
+  .feed-header { gap: 10px; }
+  .feed-summary { gap: 12px; }
+
+  /* EC cards: full width */
+  .ec-grid { grid-template-columns: 1fr; gap: 10px; }
+  .ec-card { padding: 14px 16px; }
+  .ec-bar-label { width: 80px; font-size: 8px; }
+  .ec-filter-bar { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 8px; scrollbar-width: none; }
+  .ec-filter-bar::-webkit-scrollbar { display: none; }
+  .ec-filter-bar .fbtn { flex-shrink: 0; }
+
+  /* Velocity cards: full width */
+  .vel-grid { grid-template-columns: 1fr; gap: 10px; }
+  .vel-card { padding: 14px 16px; }
+  .vel-stats { gap: 6px; }
+  .vel-stat { padding: 6px 8px; }
+  .vel-stat-val { font-size: 12px; }
+  .vel-header { gap: 8px; }
+
+  /* Chat */
+  .chat-wrap { height: 300px; }
+  .chat-row { flex-direction: column; gap: 8px; }
+  .chat-in { width: 100%; }
+  .chat-send { width: 100%; }
+
+  /* By-item section */
+  .byitem-group-table { min-width: 600px; }
+}
+
+@media (max-width: 480px) {
+  header { padding: 0 12px; }
+  .main { padding: 12px; }
+  .logo > svg { display: none; } /* hide logo SVG on tiny screens, keep text */
+  .fee-grid { grid-template-columns: 1fr 1fr; }
+  .stats-bar { grid-template-columns: 1fr 1fr; }
+  .stat-val { font-size: 24px; }
+  .feed-metrics { gap: 8px; }
+  .feed-action { flex-direction: column; align-items: flex-start; gap: 6px; }
+  .vel-milestones { font-size: 7px; }
+}
+</style>
+</head>
+<body>
+
+<div class="loading" id="loading">
+  <div class="loading-title">ANALYZING</div>
+  <div class="loading-sub" id="loadingMsg">Processing market data...</div>
+  <div class="prog-track"><div class="prog-bar" id="progBar"></div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<header>
+  <div class="logo">
+    <div class="logo-dot" id="statusDot"></div>
+    <svg width="38" height="38" viewBox="0 0 42 42" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;margin-right:6px;">
+      <defs>
+        <linearGradient id="ag" x1="21" y1="42" x2="21" y2="0" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#00c4ff"/><stop offset="100%" stop-color="#00ff87"/>
+        </linearGradient>
+        <filter id="gf" x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur stdDeviation="2" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <polygon points="21,3 39,21 21,39 3,21" fill="rgba(0,255,135,0.1)" stroke="url(#ag)" stroke-width="1.2"/>
+      <polygon points="21,10 32,21 21,32 10,21" fill="none" stroke="url(#ag)" stroke-width="0.6" opacity="0.4"/>
+      <g filter="url(#gf)">
+        <rect x="19.2" y="7" width="3.6" height="28" rx="1" fill="url(#ag)"/>
+        <polygon points="21,2 27.5,12 14.5,12" fill="url(#ag)"/>
+      </g>
+      <line x1="15" y1="21" x2="19.2" y2="21" stroke="#00ff87" stroke-width="1.2" opacity="0.7"/>
+      <line x1="22.8" y1="21" x2="27" y2="21" stroke="#00ff87" stroke-width="1.2" opacity="0.7"/>
+    </svg>
+    <div style="display:flex;flex-direction:column;line-height:1;gap:3px;">
+      <div><span style="font-family:var(--display);font-size:26px;letter-spacing:0.1em;background:linear-gradient(90deg,#00ff87,#00c4ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">FLIP</span><span style="font-family:var(--display);font-size:26px;letter-spacing:0.1em;color:var(--text);">FINDER</span></div>
+      <span style="font-family:var(--mono);font-size:7px;color:var(--text3);letter-spacing:0.2em;text-transform:uppercase;">Lowball Bid Intelligence</span>
+    </div>
+  </div>
+  <div class="header-right" id="headerStats"></div>
+</header>
+
+<div class="main">
+
+  <!-- UPLOAD -->
+  <div class="section" id="uploadSection">
+    <div class="sec-head">
+      <span class="sec-num">01</span>
+      <span class="sec-title">LOAD MARKET DATA</span>
+      <div class="sec-line"></div>
+    </div>
+
+    <div class="upload-grid">
+      <div class="upload-card" id="salesCard" onclick="document.getElementById('salesFile').click()">
+        <div class="upload-card-title">SALES HISTORY</div>
+        <div class="upload-card-sub">stockx_sales_history.csv<br>Individual sale transactions per item + size</div>
+        <button class="upload-card-btn">CHOOSE FILE</button>
+        <input type="file" id="salesFile" accept=".csv">
+      </div>
+      <div class="upload-card" id="marketCard" onclick="document.getElementById('marketFile').click()">
+        <div class="upload-card-title">MARKET DATA</div>
+        <div class="upload-card-sub">stockx_market_data.csv<br>Per-size bid / ask / last sale</div>
+        <button class="upload-card-btn">CHOOSE FILE</button>
+        <input type="file" id="marketFile" accept=".csv">
+      </div>
+    </div>
+  </div>
+
+  <!-- FEES -->
+  <div class="section" id="feeSection">
+    <div class="sec-head">
+      <span class="sec-num">02</span>
+      <span class="sec-title">FEE ASSUMPTIONS</span>
+      <div class="sec-line"></div>
+    </div>
+    <div class="fee-grid">
+      <div class="fee-card"><label>Seller Fee %</label><input class="fee-input" id="fSeller" type="number" value="9.5" step="0.5"></div>
+      <div class="fee-card"><label>Processing %</label><input class="fee-input" id="fProcess" type="number" value="3" step="0.5"></div>
+      <div class="fee-card"><label>Outbound Ship $</label><input class="fee-input" id="fShipOut" type="number" value="13.95" step="0.5"></div>
+      <div class="fee-card"><label>Inbound Ship $</label><input class="fee-input" id="fShipIn" type="number" value="6.95" step="0.5"></div>
+      <div class="fee-card"><label>Intl Ship Buffer $</label><input class="fee-input" id="fIntlBuffer" type="number" value="0" step="5"></div>
+      <div class="fee-card"><label>Min Net Profit $</label><input class="fee-input" id="fMinProfit" type="number" value="8" step="5"></div>
+      <div class="fee-card"><label>Min ROI %</label><input class="fee-input" id="fMinROI" type="number" value="8" step="1"></div>
+      <div class="fee-card"><label>Max Hold Days</label><input class="fee-input" id="fMaxHold" type="number" value="30" step="5"></div>
+      <div class="fee-card"><label>Lowball % Below Median</label><input class="fee-input" id="fLowball" type="number" value="20" step="1"></div>
+    </div>
+    <button class="run-btn" id="runBtn" onclick="runAnalysis()" disabled>
+      ▶ &nbsp;RUN ANALYSIS
+    </button>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="resultsSection" class="hidden">
+
+    <div class="stats-bar" id="statsBar"></div>
+
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('candidates',this)">CANDIDATES</div>
+      <div class="tab" onclick="switchTab('byitem',this)">BY ITEM</div>
+      <div class="tab" onclick="switchTab('rejects',this)">REJECT LIST</div>
+      <div class="tab" onclick="switchTab('advisor',this)">AI ADVISOR</div>
+      <div class="tab" onclick="switchTab('feed',this)" style="color:var(--green);" id="feedTab">📡 DAILY FEED</div>
+      <div class="tab" onclick="switchTab('exitconf',this)" id="ecTab">EXIT CONFIDENCE</div>
+      <div class="tab" onclick="switchTab('velocity',this)" id="velTab">VELOCITY</div>
+    </div>
+
+    <!-- CANDIDATES -->
+    <div class="tab-pane active" id="tab-candidates">
+      <div class="filter-bar" id="filterBar">
+        <button class="fbtn on" onclick="setGrade('all',this)">ALL</button>
+        <button class="fbtn" onclick="setGrade('A',this)">GRADE A</button>
+        <button class="fbtn" onclick="setGrade('B',this)">GRADE B</button>
+        <button class="fbtn" onclick="setGrade('C',this)">GRADE C</button>
+        <span style="width:1px;height:20px;background:var(--border2);display:inline-block;margin:0 4px;"></span>
+        <button class="fbtn" onclick="setCat('all',this)">ALL CATS</button>
+        <button class="fbtn" onclick="setCat('sneakers',this)">SNEAKERS</button>
+        <button class="fbtn" onclick="setCat('apparel',this)">APPAREL</button>
+        <button class="fbtn" onclick="setCat('collectibles',this)">COLLECTIBLES</button>
+        <button class="fbtn" onclick="setCat('electronics',this)">ELECTRONICS</button>
+        <button class="fbtn" onclick="setCat('luxury',this)">LUXURY</button>
+        <span style="width:1px;height:20px;background:var(--border2);display:inline-block;margin:0 4px;"></span>
+        <button class="fbtn" style="color:#00ff87;border-color:#00ff8744;" onclick="setSeason('IN SEASON',this)">🟢 IN SEASON</button>
+        <button class="fbtn" style="color:#ffcc00;border-color:#ffcc0044;" onclick="setSeason('SHOULDER',this)">🟡 SHOULDER</button>
+        <button class="fbtn" style="color:#ff3d3d;border-color:#ff3d3d44;" onclick="setSeason('OFF SEASON',this)">🔴 OFF SEASON</button>
+        <button class="fbtn" style="color:#3d9eff;border-color:#3d9eff44;" onclick="setSeason('all',this)">ALL SEASONS</button>
+        <input class="search-box" id="searchBox" placeholder="Search item..." oninput="renderTable()">
+        <button class="fbtn" onclick="sortBy('vol_31d')">LIQUIDITY</button>
+        <button class="fbtn" onclick="sortBy('net_profit')">NET PROFIT</button>
+        <button class="export-btn" onclick="exportCSV()">⬇ EXPORT</button>
+      </div>
+      <div class="tbl-wrap">
+        <table id="mainTable">
+          <thead>
+            <tr>
+              <th onclick="sortBy('rank')">#</th>
+              <th onclick="sortBy('title')">ITEM / SIZE</th>
+              <th onclick="sortBy('category')">CAT</th>
+              <th onclick="sortBy('vol_31d')">31D VOL</th>
+              <th onclick="sortBy('dispersion_pct')">DISPERSION</th>
+              <th onclick="sortBy('lowball_bid')">LOWBALL BID</th>
+              <th onclick="sortBy('exit_price')">EXIT PRICE</th>
+              <th onclick="sortBy('gross_spread')">GROSS SPREAD</th>
+              <th onclick="sortBy('net_profit')">NET PROFIT</th>
+              <th onclick="sortBy('roi')">ROI</th>
+              <th onclick="sortBy('composite')">SCORE</th>
+              <th onclick="sortBy('grade')">GRADE</th>
+              <th onclick="sortBy('trend')">TREND</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+      <div class="empty hidden" id="emptyState">
+        <div class="empty-big">NO MATCHES</div>
+        <div class="empty-sub">Adjust filters or lower minimum thresholds</div>
+      </div>
+    </div>
+
+    <!-- BY ITEM -->
+    <div class="tab-pane" id="tab-byitem">
+      <div id="byItemContent"></div>
+    </div>
+
+    <!-- REJECTS -->
+    <div class="tab-pane" id="tab-rejects">
+      <div id="rejectsContent"></div>
+    </div>
+
+    <!-- AI ADVISOR -->
+    <div class="tab-pane" id="tab-advisor">
+      <div style="margin-bottom:20px;">
+        <div class="sec-head" style="margin-bottom:8px;">
+          <span class="sec-num">AI</span>
+          <span class="sec-title">ADVISOR</span>
+          <div class="sec-line"></div>
+        </div>
+        <p style="font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:0.05em;">
+          Ask questions about your candidate data, get bid level recommendations, or request deeper analysis on specific items.
+        </p>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;background:var(--s2);border:1px solid var(--border);border-radius:6px;padding:8px 12px;">
+        <span style="font-family:var(--mono);font-size:9px;color:var(--text2);white-space:nowrap;letter-spacing:0.08em;">CLAUDE API KEY</span>
+        <input id="claudeApiKey" type="password"
+          style="flex:1;background:transparent;border:none;outline:none;font-family:var(--mono);font-size:11px;color:var(--accent);letter-spacing:0.05em;"
+          placeholder="sk-ant-..."
+          oninput="localStorage.setItem('claudeApiKey', this.value)">
+        <span id="keyStatus" style="font-size:9px;font-family:var(--mono);color:var(--text2);">NOT SET</span>
+      </div>
+      <div class="chat-wrap" id="chatWrap"></div>
+      <div class="chat-row">
+        <input class="chat-in" id="chatIn" placeholder="e.g. 'Which size of the Panda Dunk has the best lowball fill potential?' or 'What are my top 3 items by net profit?'" onkeydown="if(event.key==='Enter')sendChat()">
+        <button class="chat-send" id="chatSend" onclick="sendChat()">SEND</button>
+      </div>
+    </div>
+
+
+    <!-- DAILY FEED -->
+    <div class="tab-pane" id="tab-feed">
+      <div class="feed-header">
+        <div class="sec-head" style="margin-bottom:0;flex:1;">
+          <span class="sec-num">📡</span>
+          <span class="sec-title">DAILY OPPORTUNITY FEED</span>
+          <div class="sec-line"></div>
+        </div>
+        <div class="feed-date" id="feedDate"></div>
+        <button class="refresh-btn" onclick="renderFeed()">↻ REFRESH</button>
+      </div>
+      <div id="feedSummary" class="feed-summary"></div>
+      <div id="feedContent"></div>
+    </div>
+
+    <!-- EXIT CONFIDENCE -->
+    <div class="tab-pane" id="tab-exitconf">
+      <div class="sec-head" style="margin-bottom:4px;">
+        <span class="sec-num">EC</span>
+        <span class="sec-title">EXIT CONFIDENCE SCORE</span>
+        <div class="sec-line"></div>
+      </div>
+      <p style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:20px;letter-spacing:0.05em;">
+        Estimates probability of a successful resale after a lowball fill. Combines sales velocity, ask depth, price stability, and trend. High confidence = low dead-inventory risk.
+      </p>
+      <div class="ec-filter-bar" id="ecFilterBar">
+        <button class="fbtn on" onclick="setEcFilter('all',this)">ALL</button>
+        <button class="fbtn" onclick="setEcFilter('high',this)">HIGH CONFIDENCE</button>
+        <button class="fbtn" onclick="setEcFilter('mid',this)">MEDIUM</button>
+        <button class="fbtn" onclick="setEcFilter('low',this)">LOW / AT RISK</button>
+        <button class="fbtn" onclick="setEcFilter('sneakers',this)">SNEAKERS</button>
+        <button class="fbtn" onclick="setEcFilter('apparel',this)">APPAREL</button>
+        <button class="fbtn" onclick="setEcFilter('collectibles',this)">COLLECTIBLES</button>
+      </div>
+      <div class="ec-grid" id="ecContent"></div>
+    </div>
+
+    <!-- VELOCITY FORECAST -->
+    <div class="tab-pane" id="tab-velocity">
+      <div class="sec-head" style="margin-bottom:4px;">
+        <span class="sec-num">VF</span>
+        <span class="sec-title">INVENTORY VELOCITY FORECAST</span>
+        <div class="sec-line"></div>
+      </div>
+      <p style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:20px;letter-spacing:0.05em;">
+        Estimates fill timing, shipping window, and exit speed after receipt. Shows expected total capital cycle time and flags slow-exit risk items.
+      </p>
+      <div class="vel-header">
+        <div class="vel-legend">
+          <div class="vel-legend-item"><div class="vel-legend-dot" style="background:var(--yellow)"></div> BID→FILL</div>
+          <div class="vel-legend-item"><div class="vel-legend-dot" style="background:var(--blue)"></div> SHIP+AUTH</div>
+          <div class="vel-legend-item"><div class="vel-legend-dot" style="background:var(--green)"></div> LIST→SOLD</div>
+        </div>
+        <div style="display:flex;gap:8px;margin-left:auto;">
+          <button class="fbtn on" id="velAll" onclick="setVelFilter('all',this)">ALL</button>
+          <button class="fbtn" onclick="setVelFilter('fast',this)">FAST EXIT</button>
+          <button class="fbtn" onclick="setVelFilter('slow',this)">SLOW EXIT</button>
+        </div>
+      </div>
+      <div class="vel-grid" id="velContent"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>/* @license
+Papa Parse
+v5.5.3
+https://github.com/mholt/PapaParse
+License: MIT
+*/
+((e,t)=>{"function"==typeof define&&define.amd?define([],t):"object"==typeof module&&"undefined"!=typeof exports?module.exports=t():e.Papa=t()})(this,function r(){var n="undefined"!=typeof self?self:"undefined"!=typeof window?window:void 0!==n?n:{};var d,s=!n.document&&!!n.postMessage,a=n.IS_PAPA_WORKER||!1,o={},h=0,v={};function u(e){this._handle=null,this._finished=!1,this._completed=!1,this._halted=!1,this._input=null,this._baseIndex=0,this._partialLine="",this._rowCount=0,this._start=0,this._nextChunk=null,this.isFirstChunk=!0,this._completeResults={data:[],errors:[],meta:{}},function(e){var t=b(e);t.chunkSize=parseInt(t.chunkSize),e.step||e.chunk||(t.chunkSize=null);this._handle=new i(t),(this._handle.streamer=this)._config=t}.call(this,e),this.parseChunk=function(t,e){var i=parseInt(this._config.skipFirstNLines)||0;if(this.isFirstChunk&&0<i){let e=this._config.newline;e||(r=this._config.quoteChar||'"',e=this._handle.guessLineEndings(t,r)),t=[...t.split(e).slice(i)].join(e)}this.isFirstChunk&&U(this._config.beforeFirstChunk)&&void 0!==(r=this._config.beforeFirstChunk(t))&&(t=r),this.isFirstChunk=!1,this._halted=!1;var i=this._partialLine+t,r=(this._partialLine="",this._handle.parse(i,this._baseIndex,!this._finished));if(!this._handle.paused()&&!this._handle.aborted()){t=r.meta.cursor,i=(this._finished||(this._partialLine=i.substring(t-this._baseIndex),this._baseIndex=t),r&&r.data&&(this._rowCount+=r.data.length),this._finished||this._config.preview&&this._rowCount>=this._config.preview);if(a)n.postMessage({results:r,workerId:v.WORKER_ID,finished:i});else if(U(this._config.chunk)&&!e){if(this._config.chunk(r,this._handle),this._handle.paused()||this._handle.aborted())return void(this._halted=!0);this._completeResults=r=void 0}return this._config.step||this._config.chunk||(this._completeResults.data=this._completeResults.data.concat(r.data),this._completeResults.errors=this._completeResults.errors.concat(r.errors),this._completeResults.meta=r.meta),this._completed||!i||!U(this._config.complete)||r&&r.meta.aborted||(this._config.complete(this._completeResults,this._input),this._completed=!0),i||r&&r.meta.paused||this._nextChunk(),r}this._halted=!0},this._sendError=function(e){U(this._config.error)?this._config.error(e):a&&this._config.error&&n.postMessage({workerId:v.WORKER_ID,error:e,finished:!1})}}function f(e){var r;(e=e||{}).chunkSize||(e.chunkSize=v.RemoteChunkSize),u.call(this,e),this._nextChunk=s?function(){this._readChunk(),this._chunkLoaded()}:function(){this._readChunk()},this.stream=function(e){this._input=e,this._nextChunk()},this._readChunk=function(){if(this._finished)this._chunkLoaded();else{if(r=new XMLHttpRequest,this._config.withCredentials&&(r.withCredentials=this._config.withCredentials),s||(r.onload=y(this._chunkLoaded,this),r.onerror=y(this._chunkError,this)),r.open(this._config.downloadRequestBody?"POST":"GET",this._input,!s),this._config.downloadRequestHeaders){var e,t=this._config.downloadRequestHeaders;for(e in t)r.setRequestHeader(e,t[e])}var i;this._config.chunkSize&&(i=this._start+this._config.chunkSize-1,r.setRequestHeader("Range","bytes="+this._start+"-"+i));try{r.send(this._config.downloadRequestBody)}catch(e){this._chunkError(e.message)}s&&0===r.status&&this._chunkError()}},this._chunkLoaded=function(){4===r.readyState&&(r.status<200||400<=r.status?this._chunkError():(this._start+=this._config.chunkSize||r.responseText.length,this._finished=!this._config.chunkSize||this._start>=(e=>null!==(e=e.getResponseHeader("Content-Range"))?parseInt(e.substring(e.lastIndexOf("/")+1)):-1)(r),this.parseChunk(r.responseText)))},this._chunkError=function(e){e=r.statusText||e;this._sendError(new Error(e))}}function l(e){(e=e||{}).chunkSize||(e.chunkSize=v.LocalChunkSize),u.call(this,e);var i,r,n="undefined"!=typeof FileReader;this.stream=function(e){this._input=e,r=e.slice||e.webkitSlice||e.mozSlice,n?((i=new FileReader).onload=y(this._chunkLoaded,this),i.onerror=y(this._chunkError,this)):i=new FileReaderSync,this._nextChunk()},this._nextChunk=function(){this._finished||this._config.preview&&!(this._rowCount<this._config.preview)||this._readChunk()},this._readChunk=function(){var e=this._input,t=(this._config.chunkSize&&(t=Math.min(this._start+this._config.chunkSize,this._input.size),e=r.call(e,this._start,t)),i.readAsText(e,this._config.encoding));n||this._chunkLoaded({target:{result:t}})},this._chunkLoaded=function(e){this._start+=this._config.chunkSize,this._finished=!this._config.chunkSize||this._start>=this._input.size,this.parseChunk(e.target.result)},this._chunkError=function(){this._sendError(i.error)}}function c(e){var i;u.call(this,e=e||{}),this.stream=function(e){return i=e,this._nextChunk()},this._nextChunk=function(){var e,t;if(!this._finished)return e=this._config.chunkSize,i=e?(t=i.substring(0,e),i.substring(e)):(t=i,""),this._finished=!i,this.parseChunk(t)}}function p(e){u.call(this,e=e||{});var t=[],i=!0,r=!1;this.pause=function(){u.prototype.pause.apply(this,arguments),this._input.pause()},this.resume=function(){u.prototype.resume.apply(this,arguments),this._input.resume()},this.stream=function(e){this._input=e,this._input.on("data",this._streamData),this._input.on("end",this._streamEnd),this._input.on("error",this._streamError)},this._checkIsFinished=function(){r&&1===t.length&&(this._finished=!0)},this._nextChunk=function(){this._checkIsFinished(),t.length?this.parseChunk(t.shift()):i=!0},this._streamData=y(function(e){try{t.push("string"==typeof e?e:e.toString(this._config.encoding)),i&&(i=!1,this._checkIsFinished(),this.parseChunk(t.shift()))}catch(e){this._streamError(e)}},this),this._streamError=y(function(e){this._streamCleanUp(),this._sendError(e)},this),this._streamEnd=y(function(){this._streamCleanUp(),r=!0,this._streamData("")},this),this._streamCleanUp=y(function(){this._input.removeListener("data",this._streamData),this._input.removeListener("end",this._streamEnd),this._input.removeListener("error",this._streamError)},this)}function i(m){var n,s,a,t,o=Math.pow(2,53),h=-o,u=/^\s*-?(\d+\.?|\.\d+|\d+\.\d+)([eE][-+]?\d+)?\s*$/,d=/^((\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z))|(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z))|(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z)))$/,i=this,r=0,f=0,l=!1,e=!1,c=[],p={data:[],errors:[],meta:{}};function y(e){return"greedy"===m.skipEmptyLines?""===e.join("").trim():1===e.length&&0===e[0].length}function g(){if(p&&a&&(k("Delimiter","UndetectableDelimiter","Unable to auto-detect delimiting character; defaulted to '"+v.DefaultDelimiter+"'"),a=!1),m.skipEmptyLines&&(p.data=p.data.filter(function(e){return!y(e)})),_()){if(p)if(Array.isArray(p.data[0])){for(var e=0;_()&&e<p.data.length;e++)p.data[e].forEach(t);p.data.splice(0,1)}else p.data.forEach(t);function t(e,t){U(m.transformHeader)&&(e=m.transformHeader(e,t)),c.push(e)}}function i(e,t){for(var i=m.header?{}:[],r=0;r<e.length;r++){var n=r,s=e[r],s=((e,t)=>(e=>(m.dynamicTypingFunction&&void 0===m.dynamicTyping[e]&&(m.dynamicTyping[e]=m.dynamicTypingFunction(e)),!0===(m.dynamicTyping[e]||m.dynamicTyping)))(e)?"true"===t||"TRUE"===t||"false"!==t&&"FALSE"!==t&&((e=>{if(u.test(e)){e=parseFloat(e);if(h<e&&e<o)return 1}})(t)?parseFloat(t):d.test(t)?new Date(t):""===t?null:t):t)(n=m.header?r>=c.length?"__parsed_extra":c[r]:n,s=m.transform?m.transform(s,n):s);"__parsed_extra"===n?(i[n]=i[n]||[],i[n].push(s)):i[n]=s}return m.header&&(r>c.length?k("FieldMismatch","TooManyFields","Too many fields: expected "+c.length+" fields but parsed "+r,f+t):r<c.length&&k("FieldMismatch","TooFewFields","Too few fields: expected "+c.length+" fields but parsed "+r,f+t)),i}var r;p&&(m.header||m.dynamicTyping||m.transform)&&(r=1,!p.data.length||Array.isArray(p.data[0])?(p.data=p.data.map(i),r=p.data.length):p.data=i(p.data,0),m.header&&p.meta&&(p.meta.fields=c),f+=r)}function _(){return m.header&&0===c.length}function k(e,t,i,r){e={type:e,code:t,message:i};void 0!==r&&(e.row=r),p.errors.push(e)}U(m.step)&&(t=m.step,m.step=function(e){p=e,_()?g():(g(),0!==p.data.length&&(r+=e.data.length,m.preview&&r>m.preview?s.abort():(p.data=p.data[0],t(p,i))))}),this.parse=function(e,t,i){var r=m.quoteChar||'"',r=(m.newline||(m.newline=this.guessLineEndings(e,r)),a=!1,m.delimiter?U(m.delimiter)&&(m.delimiter=m.delimiter(e),p.meta.delimiter=m.delimiter):((r=((e,t,i,r,n)=>{var s,a,o,h;n=n||[",","\t","|",";",v.RECORD_SEP,v.UNIT_SEP];for(var u=0;u<n.length;u++){for(var d,f=n[u],l=0,c=0,p=0,g=(o=void 0,new E({comments:r,delimiter:f,newline:t,preview:10}).parse(e)),_=0;_<g.data.length;_++)i&&y(g.data[_])?p++:(d=g.data[_].length,c+=d,void 0===o?o=d:0<d&&(l+=Math.abs(d-o),o=d));0<g.data.length&&(c/=g.data.length-p),(void 0===a||l<=a)&&(void 0===h||h<c)&&1.99<c&&(a=l,s=f,h=c)}return{successful:!!(m.delimiter=s),bestDelimiter:s}})(e,m.newline,m.skipEmptyLines,m.comments,m.delimitersToGuess)).successful?m.delimiter=r.bestDelimiter:(a=!0,m.delimiter=v.DefaultDelimiter),p.meta.delimiter=m.delimiter),b(m));return m.preview&&m.header&&r.preview++,n=e,s=new E(r),p=s.parse(n,t,i),g(),l?{meta:{paused:!0}}:p||{meta:{paused:!1}}},this.paused=function(){return l},this.pause=function(){l=!0,s.abort(),n=U(m.chunk)?"":n.substring(s.getCharIndex())},this.resume=function(){i.streamer._halted?(l=!1,i.streamer.parseChunk(n,!0)):setTimeout(i.resume,3)},this.aborted=function(){return e},this.abort=function(){e=!0,s.abort(),p.meta.aborted=!0,U(m.complete)&&m.complete(p),n=""},this.guessLineEndings=function(e,t){e=e.substring(0,1048576);var t=new RegExp(P(t)+"([^]*?)"+P(t),"gm"),i=(e=e.replace(t,"")).split("\r"),t=e.split("\n"),e=1<t.length&&t[0].length<i[0].length;if(1===i.length||e)return"\n";for(var r=0,n=0;n<i.length;n++)"\n"===i[n][0]&&r++;return r>=i.length/2?"\r\n":"\r"}}function P(e){return e.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}function E(C){var S=(C=C||{}).delimiter,O=C.newline,x=C.comments,I=C.step,A=C.preview,T=C.fastMode,D=null,L=!1,F=null==C.quoteChar?'"':C.quoteChar,j=F;if(void 0!==C.escapeChar&&(j=C.escapeChar),("string"!=typeof S||-1<v.BAD_DELIMITERS.indexOf(S))&&(S=","),x===S)throw new Error("Comment character same as delimiter");!0===x?x="#":("string"!=typeof x||-1<v.BAD_DELIMITERS.indexOf(x))&&(x=!1),"\n"!==O&&"\r"!==O&&"\r\n"!==O&&(O="\n");var z=0,M=!1;this.parse=function(i,t,r){if("string"!=typeof i)throw new Error("Input must be a string");var n=i.length,e=S.length,s=O.length,a=x.length,o=U(I),h=[],u=[],d=[],f=z=0;if(!i)return w();if(T||!1!==T&&-1===i.indexOf(F)){for(var l=i.split(O),c=0;c<l.length;c++){if(d=l[c],z+=d.length,c!==l.length-1)z+=O.length;else if(r)return w();if(!x||d.substring(0,a)!==x){if(o){if(h=[],k(d.split(S)),R(),M)return w()}else k(d.split(S));if(A&&A<=c)return h=h.slice(0,A),w(!0)}}return w()}for(var p=i.indexOf(S,z),g=i.indexOf(O,z),_=new RegExp(P(j)+P(F),"g"),m=i.indexOf(F,z);;)if(i[z]===F)for(m=z,z++;;){if(-1===(m=i.indexOf(F,m+1)))return r||u.push({type:"Quotes",code:"MissingQuotes",message:"Quoted field unterminated",row:h.length,index:z}),E();if(m===n-1)return E(i.substring(z,m).replace(_,F));if(F===j&&i[m+1]===j)m++;else if(F===j||0===m||i[m-1]!==j){-1!==p&&p<m+1&&(p=i.indexOf(S,m+1));var y=v(-1===(g=-1!==g&&g<m+1?i.indexOf(O,m+1):g)?p:Math.min(p,g));if(i.substr(m+1+y,e)===S){d.push(i.substring(z,m).replace(_,F)),i[z=m+1+y+e]!==F&&(m=i.indexOf(F,z)),p=i.indexOf(S,z),g=i.indexOf(O,z);break}y=v(g);if(i.substring(m+1+y,m+1+y+s)===O){if(d.push(i.substring(z,m).replace(_,F)),b(m+1+y+s),p=i.indexOf(S,z),m=i.indexOf(F,z),o&&(R(),M))return w();if(A&&h.length>=A)return w(!0);break}u.push({type:"Quotes",code:"InvalidQuotes",message:"Trailing quote on quoted field is malformed",row:h.length,index:z}),m++}}else if(x&&0===d.length&&i.substring(z,z+a)===x){if(-1===g)return w();z=g+s,g=i.indexOf(O,z),p=i.indexOf(S,z)}else if(-1!==p&&(p<g||-1===g))d.push(i.substring(z,p)),z=p+e,p=i.indexOf(S,z);else{if(-1===g)break;if(d.push(i.substring(z,g)),b(g+s),o&&(R(),M))return w();if(A&&h.length>=A)return w(!0)}return E();function k(e){h.push(e),f=z}function v(e){var t=0;return t=-1!==e&&(e=i.substring(m+1,e))&&""===e.trim()?e.length:t}function E(e){return r||(void 0===e&&(e=i.substring(z)),d.push(e),z=n,k(d),o&&R()),w()}function b(e){z=e,k(d),d=[],g=i.indexOf(O,z)}function w(e){if(C.header&&!t&&h.length&&!L){var s=h[0],a=Object.create(null),o=new Set(s);let n=!1;for(let r=0;r<s.length;r++){let i=s[r];if(a[i=U(C.transformHeader)?C.transformHeader(i,r):i]){let e,t=a[i];for(;e=i+"_"+t,t++,o.has(e););o.add(e),s[r]=e,a[i]++,n=!0,(D=null===D?{}:D)[e]=i}else a[i]=1,s[r]=i;o.add(i)}n&&console.warn("Duplicate headers found and renamed."),L=!0}return{data:h,errors:u,meta:{delimiter:S,linebreak:O,aborted:M,truncated:!!e,cursor:f+(t||0),renamedHeaders:D}}}function R(){I(w()),h=[],u=[]}},this.abort=function(){M=!0},this.getCharIndex=function(){return z}}function g(e){var t=e.data,i=o[t.workerId],r=!1;if(t.error)i.userError(t.error,t.file);else if(t.results&&t.results.data){var n={abort:function(){r=!0,_(t.workerId,{data:[],errors:[],meta:{aborted:!0}})},pause:m,resume:m};if(U(i.userStep)){for(var s=0;s<t.results.data.length&&(i.userStep({data:t.results.data[s],errors:t.results.errors,meta:t.results.meta},n),!r);s++);delete t.results}else U(i.userChunk)&&(i.userChunk(t.results,n,t.file),delete t.results)}t.finished&&!r&&_(t.workerId,t.results)}function _(e,t){var i=o[e];U(i.userComplete)&&i.userComplete(t),i.terminate(),delete o[e]}function m(){throw new Error("Not implemented.")}function b(e){if("object"!=typeof e||null===e)return e;var t,i=Array.isArray(e)?[]:{};for(t in e)i[t]=b(e[t]);return i}function y(e,t){return function(){e.apply(t,arguments)}}function U(e){return"function"==typeof e}return v.parse=function(e,t){var i=(t=t||{}).dynamicTyping||!1;U(i)&&(t.dynamicTypingFunction=i,i={});if(t.dynamicTyping=i,t.transform=!!U(t.transform)&&t.transform,!t.worker||!v.WORKERS_SUPPORTED)return i=null,v.NODE_STREAM_INPUT,"string"==typeof e?(e=(e=>65279!==e.charCodeAt(0)?e:e.slice(1))(e),i=new(t.download?f:c)(t)):!0===e.readable&&U(e.read)&&U(e.on)?i=new p(t):(n.File&&e instanceof File||e instanceof Object)&&(i=new l(t)),i.stream(e);(i=(()=>{var e;return!!v.WORKERS_SUPPORTED&&(e=(()=>{var e=n.URL||n.webkitURL||null,t=r.toString();return v.BLOB_URL||(v.BLOB_URL=e.createObjectURL(new Blob(["var global = (function() { if (typeof self !== 'undefined') { return self; } if (typeof window !== 'undefined') { return window; } if (typeof global !== 'undefined') { return global; } return {}; })(); global.IS_PAPA_WORKER=true; ","(",t,")();"],{type:"text/javascript"})))})(),(e=new n.Worker(e)).onmessage=g,e.id=h++,o[e.id]=e)})()).userStep=t.step,i.userChunk=t.chunk,i.userComplete=t.complete,i.userError=t.error,t.step=U(t.step),t.chunk=U(t.chunk),t.complete=U(t.complete),t.error=U(t.error),delete t.worker,i.postMessage({input:e,config:t,workerId:i.id})},v.unparse=function(e,t){var n=!1,_=!0,m=",",y="\r\n",s='"',a=s+s,i=!1,r=null,o=!1,h=((()=>{if("object"==typeof t){if("string"!=typeof t.delimiter||v.BAD_DELIMITERS.filter(function(e){return-1!==t.delimiter.indexOf(e)}).length||(m=t.delimiter),"boolean"!=typeof t.quotes&&"function"!=typeof t.quotes&&!Array.isArray(t.quotes)||(n=t.quotes),"boolean"!=typeof t.skipEmptyLines&&"string"!=typeof t.skipEmptyLines||(i=t.skipEmptyLines),"string"==typeof t.newline&&(y=t.newline),"string"==typeof t.quoteChar&&(s=t.quoteChar),"boolean"==typeof t.header&&(_=t.header),Array.isArray(t.columns)){if(0===t.columns.length)throw new Error("Option columns is empty");r=t.columns}void 0!==t.escapeChar&&(a=t.escapeChar+s),t.escapeFormulae instanceof RegExp?o=t.escapeFormulae:"boolean"==typeof t.escapeFormulae&&t.escapeFormulae&&(o=/^[=+\-@\t\r].*$/)}})(),new RegExp(P(s),"g"));"string"==typeof e&&(e=JSON.parse(e));if(Array.isArray(e)){if(!e.length||Array.isArray(e[0]))return u(null,e,i);if("object"==typeof e[0])return u(r||Object.keys(e[0]),e,i)}else if("object"==typeof e)return"string"==typeof e.data&&(e.data=JSON.parse(e.data)),Array.isArray(e.data)&&(e.fields||(e.fields=e.meta&&e.meta.fields||r),e.fields||(e.fields=Array.isArray(e.data[0])?e.fields:"object"==typeof e.data[0]?Object.keys(e.data[0]):[]),Array.isArray(e.data[0])||"object"==typeof e.data[0]||(e.data=[e.data])),u(e.fields||[],e.data||[],i);throw new Error("Unable to serialize unrecognized input");function u(e,t,i){var r="",n=("string"==typeof e&&(e=JSON.parse(e)),"string"==typeof t&&(t=JSON.parse(t)),Array.isArray(e)&&0<e.length),s=!Array.isArray(t[0]);if(n&&_){for(var a=0;a<e.length;a++)0<a&&(r+=m),r+=k(e[a],a);0<t.length&&(r+=y)}for(var o=0;o<t.length;o++){var h=(n?e:t[o]).length,u=!1,d=n?0===Object.keys(t[o]).length:0===t[o].length;if(i&&!n&&(u="greedy"===i?""===t[o].join("").trim():1===t[o].length&&0===t[o][0].length),"greedy"===i&&n){for(var f=[],l=0;l<h;l++){var c=s?e[l]:l;f.push(t[o][c])}u=""===f.join("").trim()}if(!u){for(var p=0;p<h;p++){0<p&&!d&&(r+=m);var g=n&&s?e[p]:p;r+=k(t[o][g],p)}o<t.length-1&&(!i||0<h&&!d)&&(r+=y)}}return r}function k(e,t){var i,r;return null==e?"":e.constructor===Date?JSON.stringify(e).slice(1,25):(r=!1,o&&"string"==typeof e&&o.test(e)&&(e="'"+e,r=!0),i=e.toString().replace(h,a),(r=r||!0===n||"function"==typeof n&&n(e,t)||Array.isArray(n)&&n[t]||((e,t)=>{for(var i=0;i<t.length;i++)if(-1<e.indexOf(t[i]))return!0;return!1})(i,v.BAD_DELIMITERS)||-1<i.indexOf(m)||" "===i.charAt(0)||" "===i.charAt(i.length-1))?s+i+s:i)}},v.RECORD_SEP=String.fromCharCode(30),v.UNIT_SEP=String.fromCharCode(31),v.BYTE_ORDER_MARK="\ufeff",v.BAD_DELIMITERS=["\r","\n",'"',v.BYTE_ORDER_MARK],v.WORKERS_SUPPORTED=!s&&!!n.Worker,v.NODE_STREAM_INPUT=1,v.LocalChunkSize=10485760,v.RemoteChunkSize=5242880,v.DefaultDelimiter=",",v.Parser=E,v.ParserHandle=i,v.NetworkStreamer=f,v.FileStreamer=l,v.StringStreamer=c,v.ReadableStreamStreamer=p,n.jQuery&&((d=n.jQuery).fn.parse=function(o){var i=o.config||{},h=[];return this.each(function(e){if(!("INPUT"===d(this).prop("tagName").toUpperCase()&&"file"===d(this).attr("type").toLowerCase()&&n.FileReader)||!this.files||0===this.files.length)return!0;for(var t=0;t<this.files.length;t++)h.push({file:this.files[t],inputElem:this,instanceConfig:d.extend({},i)})}),e(),this;function e(){if(0===h.length)U(o.complete)&&o.complete();else{var e,t,i,r,n=h[0];if(U(o.before)){var s=o.before(n.file,n.inputElem);if("object"==typeof s){if("abort"===s.action)return e="AbortError",t=n.file,i=n.inputElem,r=s.reason,void(U(o.error)&&o.error({name:e},t,i,r));if("skip"===s.action)return void u();"object"==typeof s.config&&(n.instanceConfig=d.extend(n.instanceConfig,s.config))}else if("skip"===s)return void u()}var a=n.instanceConfig.complete;n.instanceConfig.complete=function(e){U(a)&&a(e,n.file,n.inputElem),u()},v.parse(n.file,n.instanceConfig)}}function u(){h.splice(0,1),e()}}),a&&(n.onmessage=function(e){e=e.data;void 0===v.WORKER_ID&&e&&(v.WORKER_ID=e.workerId);"string"==typeof e.input?n.postMessage({workerId:v.WORKER_ID,results:v.parse(e.input,e.config),finished:!0}):(n.File&&e.input instanceof File||e.input instanceof Object)&&(e=v.parse(e.input,e.config))&&n.postMessage({workerId:v.WORKER_ID,results:e,finished:!0})}),(f.prototype=Object.create(u.prototype)).constructor=f,(l.prototype=Object.create(u.prototype)).constructor=l,(c.prototype=Object.create(c.prototype)).constructor=c,(p.prototype=Object.create(u.prototype)).constructor=p,v});</script>
+<script>
+
+// --- STATE --------------------------------------------------------------------
+let salesData = [];      // raw sales CSV rows
+let marketData = [];     // raw market CSV rows
+let candidates = [];     // scored candidates
+let rejects = [];
+let sortField = 'composite';
+let sortDir = -1;
+let gradeFilter = 'all';
+let catFilter = 'all';
+let seasonFilter = 'all';
+let chatHistory = [];
+let salesLoaded = false;
+let marketLoaded = false;
+
+// --- FILE LOADING -------------------------------------------------------------
+document.getElementById('salesFile').addEventListener('change', e => {
+  if (!e.target.files[0]) return;
+  Papa.parse(e.target.files[0], {
+    header: true, skipEmptyLines: true,
+    complete: r => {
+      salesData = r.data;
+      salesLoaded = true;
+      document.getElementById('salesCard').classList.add('loaded');
+      showToast(`Sales history: ${salesData.length.toLocaleString()} rows`);
+      checkReady();
+    }
+  });
+});
+
+document.getElementById('marketFile').addEventListener('change', e => {
+  if (!e.target.files[0]) return;
+  Papa.parse(e.target.files[0], {
+    header: true, skipEmptyLines: true,
+    complete: r => {
+      marketData = r.data;
+      marketLoaded = true;
+      document.getElementById('marketCard').classList.add('loaded');
+      showToast(`Market data: ${marketData.length.toLocaleString()} rows`);
+      checkReady();
+    }
+  });
+});
+
+// drag-drop for both cards
+['salesCard','marketCard'].forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener('dragover', e => { e.preventDefault(); el.classList.add('drag'); });
+  el.addEventListener('dragleave', () => el.classList.remove('drag'));
+  el.addEventListener('drop', e => {
+    e.preventDefault(); el.classList.remove('drag');
+    const file = e.dataTransfer.files[0];
+    if (!file) return;
+    const isSales = id === 'salesCard';
+    Papa.parse(file, {
+      header: true, skipEmptyLines: true,
+      complete: r => {
+        if (isSales) { salesData = r.data; salesLoaded = true; el.classList.add('loaded'); showToast(`Sales: ${r.data.length} rows`); }
+        else { marketData = r.data; marketLoaded = true; el.classList.add('loaded'); showToast(`Market: ${r.data.length} rows`); }
+        checkReady();
+      }
+    });
+  });
+});
+
+function checkReady() {
+  // Enable run if at least sales data is loaded
+  document.getElementById('runBtn').disabled = !salesLoaded;
+  if (salesLoaded) setStatus('DATA READY', false);
+}
+
+// --- FEES ---------------------------------------------------------------------
+function getFees() {
+  return {
+    sellerPct:  parseFloat(document.getElementById('fSeller').value) / 100,
+    processPct: parseFloat(document.getElementById('fProcess').value) / 100,
+    shipOut:    parseFloat(document.getElementById('fShipOut').value),
+    shipIn:     parseFloat(document.getElementById('fShipIn').value),
+    intlBuffer: parseFloat(document.getElementById('fIntlBuffer').value) || 0,
+    minProfit:  parseFloat(document.getElementById('fMinProfit').value),
+    minROI:     parseFloat(document.getElementById('fMinROI').value) / 100,
+    maxHold:    parseFloat(document.getElementById('fMaxHold').value),
+    lowballPct: parseFloat(document.getElementById('fLowball').value) / 100,
+  };
+}
+
+function netProfit(acqCost, exitPrice, fees) {
+  const payout = exitPrice * (1 - fees.sellerPct - fees.processPct) - fees.shipOut;
+  return payout - acqCost - fees.shipIn - (fees.intlBuffer || 0);
+}
+
+// --- ANALYSIS ENGINE ----------------------------------------------------------
+function parsePrice(v) {
+  if (v === null || v === undefined || v === '') return null;
+  const n = parseFloat(String(v).replace(/[$,\s]/g,''));
+  return isNaN(n) ? null : n;
+}
+function parseDate(v) {
+  if (!v) return null;
+  const d = new Date(v);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function runAnalysis() {
+  const fees = getFees();
+  showLoading('Building item-size buckets...');
+
+  setTimeout(() => {
+    // -- 1. Build market lookup: key = sku+size -> market row --------------
+    const marketLookup = {};
+    marketData.forEach(row => {
+      const sku  = (row.sku || '').trim();
+      const size = (row.size || '').trim();
+      const key  = `${sku}||${size}`;
+      marketLookup[key] = row;
+    });
+
+    // -- 2. Group sales by title+size --------------------------------------
+    const buckets = {};
+    salesData.forEach(row => {
+      const title = (row.title || row.name || '').trim();
+      const size  = (row.size  || '').trim();
+      const sku   = (row.sku   || '').trim();
+      const price = parsePrice(row.sale_price || row.price);
+      const date  = parseDate(row.sale_date   || row.date);
+      if (!title || !price || price <= 0) return;
+
+      const key = `${title}||${size}`;
+      if (!buckets[key]) {
+        buckets[key] = { title, size, sku, sales: [], marketRow: null };
+      }
+      buckets[key].sales.push({ price, date });
+    });
+
+    // Attach market rows to buckets
+    Object.values(buckets).forEach(b => {
+      const mKey = `${b.sku}||${b.size}`;
+      b.marketRow = marketLookup[mKey] || null;
+    });
+
+    updateProgress(30, 'Scoring candidates...');
+
+    // -- 3. Score each bucket ----------------------------------------------
+    candidates = [];
+    rejects = [];
+    const keys = Object.keys(buckets);
+
+    function chunk(i) {
+      for (let end = Math.min(i+80, keys.length); i < end; i++) {
+        const b = buckets[keys[i]];
+        const result = scoreCandidate(b, fees);
+        if (result.grade === 'F') rejects.push(result);
+        else candidates.push(result);
+      }
+      updateProgress(30 + Math.round((i/keys.length)*65), 'Scoring...');
+      if (i < keys.length) setTimeout(() => chunk(i), 0);
+      else finalize(fees);
+    }
+    chunk(0);
+  }, 60);
+}
+
+// --- INTERNATIONAL & FLEX PRICE NORMALIZATION ---------------------------------
+// StockX operates globally. Sales data may include non-USD prices or
+// "Sell Faster" (flex) prices which are below true market value.
+// We normalize both before scoring to avoid skewed bid zones.
+
+const FX_TO_USD = {
+  'EUR': 1.08, 'GBP': 1.27, 'CAD': 0.74, 'AUD': 0.65,
+  'JPY': 0.0067, 'CNY': 0.14, 'KRW': 0.00075, 'SGD': 0.74,
+  'HKD': 0.13, 'MXN': 0.058, 'BRL': 0.20, 'USD': 1.0,
+};
+
+function normalizeToUSD(price, currency) {
+  if (!currency || currency === 'USD') return price;
+  const rate = FX_TO_USD[currency.toUpperCase()] || 1.0;
+  return price * rate;
+}
+
+function isFlexPrice(price, median) {
+  // Flex / "Sell Faster" prices are typically 10-25% below median
+  // We flag but don't discard them -- they ARE real motivated-seller data points
+  // However we exclude them from exit price calculation
+  if (!median || median === 0) return false;
+  return price < median * 0.75;
+}
+
+function scoreCandidate(b, fees) {
+  const sales   = b.sales;
+  const mRow    = b.marketRow;
+  const now     = new Date();
+
+  // -- 1. TIME WINDOW FILTER -- last 12 months only -----------------------
+  const d12m  = new Date(now - 365*864e5);
+  const d6m   = new Date(now - 180*864e5);
+  const d3m   = new Date(now - 90*864e5);
+  const d1m   = new Date(now - 31*864e5);
+
+  // Filter to 12 months, normalize currency
+  const currency = mRow?.currency || 'USD';
+  const sales12m = sales.filter(s => !s.date || s.date >= d12m);
+  const allPrices = sales12m
+    .map(s => normalizeToUSD(s.price, currency))
+    .filter(p => p > 0);
+
+  if (allPrices.length < 3) {
+    return baseReject(b, 'Insufficient sales in last 12 months (< 3 transactions)');
+  }
+
+  // -- 2. RECENCY-WEIGHTED MEDIAN ----------------------------------------
+  // Weight recent sales more heavily for accurate exit price estimation.
+  // Last 1 month = weight 3x, last 3 months = 2x, last 6 months = 1.5x, older = 1x
+  const weightedPrices = [];
+  sales12m.forEach(s => {
+    const p = normalizeToUSD(s.price, currency);
+    if (p <= 0) return;
+    let w = 1;
+    if (s.date) {
+      if (s.date >= d1m) w = 3;
+      else if (s.date >= d3m) w = 2;
+      else if (s.date >= d6m) w = 1.5;
+    }
+    for (let i = 0; i < Math.round(w * 2); i++) weightedPrices.push(p);
+  });
+
+  const wSorted = [...weightedPrices].sort((a,b) => a-b);
+  const wMedian = wSorted[Math.floor(wSorted.length/2)];
+
+  // -- 3. FLEX PRICE SEPARATION ------------------------------------------
+  // Separate flex (motivated dump) prices from normal market prices.
+  // Use normal prices for exit estimation, all prices for fill potential scoring.
+  const normalPrices = allPrices.filter(p => !isFlexPrice(p, wMedian));
+  const flexPrices   = allPrices.filter(p => isFlexPrice(p, wMedian));
+  const flexRate     = allPrices.length > 0 ? flexPrices.length / allPrices.length : 0;
+
+  // Use normal prices for exit price stats, all prices for dispersion
+  const pricesForExit = normalPrices.length >= 3 ? normalPrices : allPrices;
+  const sortedExit = [...pricesForExit].sort((a,b) => a-b);
+  const sortedAll  = [...allPrices].sort((a,b) => a-b);
+  const n = sortedAll.length;
+
+  const median  = wMedian;
+  const p10     = sortedAll[Math.floor(n*0.10)];
+  const p25     = sortedAll[Math.floor(n*0.25)];
+  const p75     = sortedExit[Math.floor(sortedExit.length*0.75)];
+  const p90     = sortedExit[Math.floor(sortedExit.length*0.90)];
+  const priceMin = sortedAll[0];
+  const priceMax = sortedAll[n-1];
+
+  // -- 4. VOLUME BY TIME WINDOW ------------------------------------------
+  const mVol31d   = parseInt(mRow?.sold_in_past_31_days) || 0;
+  const mMedian10 = parsePrice(mRow?.last_10_sales_median) || null;
+  const mMedian20 = parsePrice(mRow?.last_20_sales_median) || null;
+
+  const sales1m  = sales12m.filter(s => s.date && s.date >= d1m);
+  const sales3m  = sales12m.filter(s => s.date && s.date >= d3m);
+  const sales6m  = sales12m.filter(s => s.date && s.date >= d6m);
+
+  const vol31d = mVol31d > 0 ? mVol31d : sales1m.length;
+  const vol3m  = sales3m.length;
+  const vol6m  = sales6m.length;
+
+  // -- 5. MARKET DATA ----------------------------------------------------
+  const mLowestAsk    = parsePrice(mRow?.lowest_ask)    || null;
+  const mHighestOffer = parsePrice(mRow?.highest_offer) || null;
+  const mLastSale     = parsePrice(mRow?.last_sale)     || median;
+
+  // Normalize ask to USD if needed
+  const askUSD = mLowestAsk ? normalizeToUSD(mLowestAsk, currency) : null;
+
+  // -- 6. TREND DETECTION ------------------------------------------------
+  let trendFactor = 0;
+  if (mMedian10 && mMedian20 && mMedian20 > 0) {
+    trendFactor = (mMedian10 - mMedian20) / mMedian20;
+  } else if (sales1m.length >= 2 && sales6m.length >= 5) {
+    const avg1m = sales1m.map(s=>normalizeToUSD(s.price,currency)).reduce((a,b)=>a+b,0)/sales1m.length;
+    const avg6m = sales6m.map(s=>normalizeToUSD(s.price,currency)).reduce((a,b)=>a+b,0)/sales6m.length;
+    trendFactor = avg6m > 0 ? (avg1m - avg6m) / avg6m : 0;
+  }
+
+  // -- 7. BID & EXIT PRICE -----------------------------------------------
+  // Key insight: opportunity = gap between where asks sit vs where sales happen.
+  // If ask ≈ recent sales → no spread. If ask >> recent sales → real opportunity.
+
+  // Recent sales median (1m preferred, 3m fallback)
+  const recentSales1m = sales1m
+    .map(s => normalizeToUSD(s.price, currency))
+    .filter(p => p > 0 && !isFlexPrice(p, wMedian));
+  const recentSales3m = sales3m
+    .map(s => normalizeToUSD(s.price, currency))
+    .filter(p => p > 0 && !isFlexPrice(p, wMedian));
+  const sorted1m = [...recentSales1m].sort((a,b) => a-b);
+  const sorted3m = [...recentSales3m].sort((a,b) => a-b);
+  const recentMedian1m = sorted1m.length >= 2 ? sorted1m[Math.floor(sorted1m.length/2)] : null;
+  const recentMedian3m = sorted3m.length >= 3 ? sorted3m[Math.floor(sorted3m.length/2)] : null;
+  const recentSalesMedian = recentMedian1m || recentMedian3m || median;
+
+  // Ask-to-sales ratio: how far above recent sales is the lowest ask?
+  // >1.5 = disconnected (real opportunity), <1.1 = tight market (no spread)
+  const askToSalesRatio = askUSD && recentSalesMedian > 0
+    ? askUSD / recentSalesMedian : 1.0;
+
+  // BID: p25 of recent sales — where motivated sellers have historically dumped
+  const targetBid = Math.min(
+    recentSalesMedian * 0.90,
+    Math.max(p10, p25)
+  );
+
+  // EXIT: anchor to recent sales median — what buyers are actually paying
+  // If ask is tight to recent sales, exit at ask-$1 (thin spread will show naturally)
+  let exitPrice;
+  if (askUSD && askToSalesRatio >= 1.1 && askUSD < recentSalesMedian * 3) {
+    exitPrice = recentSalesMedian;
+  } else if (askUSD && askToSalesRatio < 1.1) {
+    exitPrice = askUSD - 1;
+  } else {
+    exitPrice = p75;
+  }
+
+  // Flag: viable spread exists
+  const liveSpreadViable = askToSalesRatio >= 1.15 && exitPrice > targetBid * 1.10;
+
+  const acqCost = targetBid + fees.shipIn;
+  const net = netProfit(acqCost, exitPrice, fees);
+  const roi = acqCost > 0 ? net / acqCost : 0;
+
+  // -- 8. LOW SALE RATE (includes flex -- these ARE motivated dumps) -------
+  const lowSales = allPrices.filter(p => p <= targetBid * 1.05).length;
+  const lowSaleRate = lowSales / allPrices.length;
+
+  // -- 9. SCORES ---------------------------------------------------------
+
+  // 1. Liquidity -- emphasize last 1-3 months over 6-12
+  const liq = clamp(
+    (vol31d >= 30 ? 4 : vol31d >= 15 ? 3 : vol31d >= 5 ? 2 : vol31d >= 1 ? 1 : 0) +
+    (vol3m  >= 60 ? 3 : vol3m  >= 25 ? 2 : vol3m  >= 8  ? 1 : 0) +
+    (vol6m  >= 80 ? 3 : vol6m  >= 30 ? 2 : vol6m  >= 10 ? 1 : 0)
+  );
+
+  // 2. Price Dispersion -- based on full 12m range
+  const dispAbs = priceMax - priceMin;
+  const dispPct = median > 0 ? dispAbs / median : 0;
+  const disp = clamp(
+    dispPct >= 0.5 ? 10 :
+    dispPct >= 0.35 ? 8 :
+    dispPct >= 0.22 ? 6 :
+    dispPct >= 0.12 ? 4 : 2
+  );
+
+  // 3. Lowball Fill Potential -- boost if flex sales are frequent
+  const fillBase =
+    lowSaleRate >= 0.20 ? 8 :
+    lowSaleRate >= 0.12 ? 6 :
+    lowSaleRate >= 0.07 ? 4 :
+    lowSaleRate >= 0.03 ? 2 : 1;
+  const flexBonus = flexRate >= 0.15 ? 2 : flexRate >= 0.08 ? 1 : 0;
+  const fill = clamp(fillBase + flexBonus);
+
+  // 4. Exit Liquidity -- based on recent normal-price sales
+  const aboveMedian = normalPrices.filter(p => p >= median).length;
+  const exitLiqBase = normalPrices.length > 0 ? aboveMedian / normalPrices.length : 0;
+  const exitLiq = clamp(Math.round(exitLiqBase * 8) + (vol31d >= 10 ? 2 : vol31d >= 5 ? 1 : 0));
+
+  // 5. Spread Quality -- lowered thresholds per request
+  const spreadScore = clamp(
+    net >= 70 ? 10 :
+    net >= 50 ? 8 :
+    net >= 30 ? 6 :
+    net >= 15 ? 4 :   // lowered from 20
+    net >= 8  ? 2 : 0 // lowered from 10
+  );
+
+  // 6. Repeatability -- emphasize last 3 months
+  const repeats3m = sales3m.filter(s => normalizeToUSD(s.price,currency) <= targetBid * 1.05).length;
+  const rep = clamp(
+    repeats3m >= 10 ? 10 :
+    repeats3m >= 5  ? 8 :
+    repeats3m >= 3  ? 6 :
+    repeats3m >= 1  ? 3 : 0
+  );
+
+  // 7. Capital Efficiency
+  const capEff = clamp(
+    (roi >= 0.35 ? 4 : roi >= 0.20 ? 3 : roi >= 0.12 ? 2 : roi >= 0.06 ? 1 : 0) +
+    (net >= 40 ? 3 : net >= 20 ? 2 : net >= 10 ? 1 : 0) +
+    (liq >= 6 ? 3 : liq >= 4 ? 2 : 1)
+  );
+
+  // 8. Risk
+  const risk = clamp(
+    (trendFactor >= 0.05 ? 3 : trendFactor >= -0.05 ? 2 : trendFactor >= -0.15 ? 1 : 0) +
+    (liq >= 6 ? 3 : liq >= 3 ? 2 : 1) +
+    (net > 0 ? 2 : 0) +
+    (dispPct <= 1.2 ? 2 : 1)
+  );
+
+  // Composite
+  const composite = Math.round(
+    liq         * 0.18 +
+    disp        * 0.14 +
+    fill        * 0.16 +
+    exitLiq     * 0.12 +
+    spreadScore * 0.16 +
+    rep         * 0.10 +
+    capEff      * 0.08 +
+    risk        * 0.06
+  );
+
+  // Grade -- min net profit lowered to $15
+  const grade =
+    composite >= 6 && net >= fees.minProfit && roi >= fees.minROI ? 'A' :
+    composite >= 5 && net >= fees.minProfit * 0.75 ? 'B' :
+    composite >= 3 && net >= 0 ? 'C' :
+    net < 0 ? 'F' : 'D';
+
+  const trend =
+    trendFactor >= 0.08 ? 'Uptrend' :
+    trendFactor >= -0.03 ? 'Range-bound' :
+    trendFactor >= -0.12 ? 'Soft decline' : 'Declining';
+
+  const category = inferCategory(b.title, b.sku);
+
+  return {
+    title: b.title, size: b.size, sku: b.sku, category,
+    grade, composite, trend,
+    prices_count: allPrices.length,
+    vol_31d: vol31d,
+    vol_3m: vol3m,
+    vol_6m: vol6m,
+    price_min: priceMin, price_max: priceMax,
+    median, p10, p25, p75, p90,
+    disp_abs: Math.round(dispAbs*100)/100,
+    dispersion_pct: Math.round(dispPct*1000)/10,
+    flex_rate: Math.round(flexRate*1000)/10,
+    lowball_bid: Math.round(targetBid*100)/100,
+    exit_price: Math.round(exitPrice*100)/100,
+    lowest_ask: askUSD ? Math.round(askUSD*100)/100 : null,
+    highest_offer: mHighestOffer,
+    last_sale: mLastSale,
+    gross_spread: Math.round((exitPrice - targetBid)*100)/100,
+    net_profit: Math.round(net*100)/100,
+    roi: Math.round(roi*1000)/10,
+    low_sale_rate: Math.round(lowSaleRate*1000)/10,
+    trendFactor: Math.round(trendFactor*1000)/10,
+    currency,
+    live_spread_viable: liveSpreadViable,
+    ask_to_sales_ratio: Math.round(askToSalesRatio*100)/100,
+    recent_sales_median: Math.round(recentSalesMedian*100)/100,
+    scores: { liq, disp, fill, exitLiq, spreadScore, rep, capEff, risk },
+    est_days_to_exit: vol31d >= 30 ? 2 : vol31d >= 15 ? 4 : vol31d >= 7 ? 7 : vol31d >= 3 ? 14 : 21,
+    tier1_bid: mHighestOffer ? Math.max(parseFloat(mHighestOffer||0) - 1, p10) : p10,
+    tier2_bid: Math.round(median * (1 - fees.lowballPct) * 100) / 100,
+    tier3_bid: Math.round(p10 * 100) / 100,
+    tier1_net: 0,
+    tier2_net: 0,
+    tier3_net: 0,
+    rank: 0,
+    rejectReason: '',
+  };
+}
+
+// --- SEASONAL SCORING --------------------------------------------------------
+function getSeasonScore(title, category) {
+  const t = title.toLowerCase();
+  const month = new Date().getMonth(); // 0=Jan, 11=Dec
+  const isSummer = month >= 3 && month <= 8;   // Apr-Sep
+  const isWinter = month >= 9 || month <= 1;   // Oct-Feb
+  const isShoulder = !isSummer && !isWinter;   // Mar, Mar
+
+  // Slides / sandals — peak Apr-Sep
+  if (t.includes('slide') || t.includes('sandal') || t.includes('clog') ||
+      t.includes('mule') || t.includes('birkenstock') || t.includes('tazz') ||
+      t.includes('tasman') || t.includes('disquette') || t.includes('foam rnnr')) {
+    if (isSummer) return { label: 'IN SEASON', color: '#00ff87', score: 1.15 };
+    if (isShoulder) return { label: 'SHOULDER', color: '#ffcc00', score: 1.0 };
+    return { label: 'OFF SEASON', color: '#ff3d3d', score: 0.85 };
+  }
+
+  // Shorts / tees / tanks — peak Apr-Sep
+  if (t.includes('short') || t.includes('tank') || t.includes('tee') ||
+      t.includes('t-shirt') || t.includes('jersey') || (t.includes('tee') && !t.includes('crewneck'))) {
+    if (isSummer) return { label: 'IN SEASON', color: '#00ff87', score: 1.1 };
+    if (isShoulder) return { label: 'SHOULDER', color: '#ffcc00', score: 0.95 };
+    return { label: 'OFF SEASON', color: '#ff3d3d', score: 0.88 };
+  }
+
+  // Heavy fleece / hoodies / jackets / coats — peak Oct-Feb
+  if (t.includes('hoodie') || t.includes('fleece') || t.includes('puffer') ||
+      t.includes('jacket') || t.includes('coat') || t.includes('sweatshirt') ||
+      t.includes('pullover') || t.includes('crewneck') || t.includes('thermal') ||
+      t.includes('wool') || t.includes('polar')) {
+    if (isWinter) return { label: 'IN SEASON', color: '#00ff87', score: 1.12 };
+    if (isShoulder) return { label: 'SHOULDER', color: '#ffcc00', score: 1.0 };
+    return { label: 'OFF SEASON', color: '#ff3d3d', score: 0.87 };
+  }
+
+  // Boots — peak Oct-Feb
+  if (t.includes('boot') || t.includes('timberland') || t.includes('ugg')) {
+    if (isWinter) return { label: 'IN SEASON', color: '#00ff87', score: 1.1 };
+    if (isShoulder) return { label: 'SHOULDER', color: '#ffcc00', score: 0.95 };
+    return { label: 'OFF SEASON', color: '#ff3d3d', score: 0.85 };
+  }
+
+  // Collectibles — holiday spike Nov-Dec, steady otherwise
+  if (category === 'collectibles') {
+    if (month >= 10) return { label: 'HOLIDAY PEAK', color: '#00ff87', score: 1.15 };
+    return { label: 'YEAR ROUND', color: '#3d9eff', score: 1.0 };
+  }
+
+  // Electronics — holiday spike Nov-Dec
+  if (category === 'electronics') {
+    if (month >= 10) return { label: 'HOLIDAY PEAK', color: '#00ff87', score: 1.12 };
+    return { label: 'YEAR ROUND', color: '#3d9eff', score: 1.0 };
+  }
+
+  // Luxury — steady year round with slight holiday bump
+  if (category === 'luxury') {
+    if (month >= 10) return { label: 'GIFT SEASON', color: '#00ff87', score: 1.08 };
+    return { label: 'YEAR ROUND', color: '#3d9eff', score: 1.0 };
+  }
+
+  // Sneakers — Jordan retros spike around holidays and back-to-school
+  if (t.includes('jordan') || t.includes('dunk') || t.includes('air force')) {
+    if (month >= 7 && month <= 9) return { label: 'BTS PEAK', color: '#00ff87', score: 1.1 };
+    if (month >= 10) return { label: 'HOLIDAY PEAK', color: '#00ff87', score: 1.12 };
+    return { label: 'YEAR ROUND', color: '#3d9eff', score: 1.0 };
+  }
+
+  // Default — year round
+  return { label: 'YEAR ROUND', color: '#3d9eff', score: 1.0 };
+}
+
+function inferCategory(title, sku) {
+  const t = (title + ' ' + sku).toLowerCase();
+  if (t.includes('airpod') || t.includes('sony') || t.includes('quest') || t.includes('playstation') || t.includes('xbox') || t.includes('dji')) return 'electronics';
+  if (t.includes('kaws') || t.includes('bearbrick') || t.includes('bear@brick') || t.includes('funko') || t.includes('medicom') || t.includes('dunny')) return 'collectibles';
+  if (t.includes('speedy') || t.includes('neverfull') || t.includes('goyard') || t.includes('chanel') || t.includes('rolex') || t.includes('cartier') || t.includes('flap') || t.includes('tote')) return 'luxury';
+  if (t.includes('hoodie') || t.includes('crewneck') || t.includes('tee') || t.includes('fleece') || t.includes('shirt') || t.includes('sweatshirt') || t.includes('supreme') || t.includes('palace') || t.includes('stussy')) return 'apparel';
+  return 'sneakers';
+}
+
+function baseReject(b, reason) {
+  return {
+    title: b.title, size: b.size, sku: b.sku,
+    category: inferCategory(b.title, b.sku),
+    grade: 'F', composite: 0, trend: 'Unknown',
+    prices_count: b.sales.length, vol_31d: 0, vol_90d: 0,
+    price_min:0, price_max:0, median:0, p10:0, p25:0, p75:0, p90:0,
+    disp_abs:0, dispersion_pct:0, lowball_bid:0, exit_price:0,
+    lowest_ask:null, highest_offer:null, last_sale:null,
+    gross_spread:0, net_profit:0, roi:0, low_sale_rate:0,
+    trendFactor:0, scores:{liq:0,disp:0,fill:0,exitLiq:0,spreadScore:0,rep:0,capEff:0,risk:0},
+    rank:0, rejectReason: reason,
+  };
+}
+
+function clamp(v, lo=0, hi=10) { return Math.min(hi, Math.max(lo, Math.round(v))); }
+
+function finalize(fees) {
+  // Attach season score to every candidate
+  candidates.forEach(c => {
+    c.season = getSeasonScore(c.title, c.category);
+  });
+  rejects.forEach(c => {
+    c.season = getSeasonScore(c.title, c.category);
+  });
+
+  candidates.sort((a,b) => b.composite - a.composite);
+  candidates.forEach((c,i) => c.rank = i+1);
+
+  hideLoading();
+  document.getElementById('resultsSection').classList.remove('hidden');
+  renderStats(fees);
+  renderTable();
+  renderByItem();
+  renderRejects();
+  initChat();
+  renderFeed();
+  setStatus('LIVE', true);
+  showToast(`${candidates.length} candidates scored -- ${candidates.filter(c=>c.grade==='A').length} Grade A`);
+  document.getElementById('resultsSection').scrollIntoView({ behavior:'smooth' });
+}
+
+// --- RENDER -------------------------------------------------------------------
+function renderStats(fees) {
+  const viable = candidates.filter(c => ['A','B'].includes(c.grade));
+  const avgNet = viable.length ? viable.reduce((s,c)=>s+c.net_profit,0)/viable.length : 0;
+  const topROI = viable.length ? Math.max(...viable.map(c=>c.roi)) : 0;
+
+  document.getElementById('statsBar').innerHTML = `
+    <div class="stat-cell"><div class="stat-val w">${candidates.length}</div><div class="stat-label">Total Candidates</div></div>
+    <div class="stat-cell"><div class="stat-val g">${candidates.filter(c=>c.grade==='A').length}</div><div class="stat-label">Grade A</div></div>
+    <div class="stat-cell"><div class="stat-val y">${candidates.filter(c=>c.grade==='B').length}</div><div class="stat-label">Grade B</div></div>
+    <div class="stat-cell"><div class="stat-val b">${candidates.filter(c=>c.grade==='C').length}</div><div class="stat-label">Grade C</div></div>
+    <div class="stat-cell"><div class="stat-val g">$${avgNet.toFixed(0)}</div><div class="stat-label">Avg Net Profit (A/B)</div></div>
+    <div class="stat-cell"><div class="stat-val g">${topROI.toFixed(1)}%</div><div class="stat-label">Top ROI</div></div>
+    <div class="stat-cell"><div class="stat-val r">${rejects.length}</div><div class="stat-label">Rejected</div></div>
+  `;
+
+  document.getElementById('headerStats').innerHTML = `
+    <div class="hstat"><div class="hstat-val">${candidates.filter(c=>c.grade==='A').length}</div><div class="hstat-label">Grade A</div></div>
+    <div class="hstat"><div class="hstat-val">$${avgNet.toFixed(0)}</div><div class="hstat-label">Avg Net</div></div>
+    <div class="hstat"><div class="hstat-val">${topROI.toFixed(1)}%</div><div class="hstat-label">Top ROI</div></div>
+  `;
+}
+
+function setGrade(g, btn) {
+  gradeFilter = g;
+  document.querySelectorAll('#filterBar .fbtn').forEach(b => { if(['ALL','GRADE A','GRADE B','GRADE C'].some(l=>b.textContent===l)) b.classList.remove('on'); });
+  btn.classList.add('on');
+  renderTable();
+}
+
+function setCat(c, btn) {
+  catFilter = c;
+  document.querySelectorAll('#filterBar .fbtn').forEach(b => { if(['ALL CATS','SNEAKERS','APPAREL','COLLECTIBLES','ELECTRONICS','LUXURY'].some(l=>b.textContent===l)) b.classList.remove('on'); });
+  btn.classList.add('on');
+  renderTable();
+}
+
+function setSeason(s, btn) {
+  seasonFilter = s;
+  document.querySelectorAll('#filterBar .fbtn').forEach(b => {
+    if(['🟢 IN SEASON','🟡 SHOULDER','🔴 OFF SEASON','ALL SEASONS'].some(l=>b.textContent===l)) b.classList.remove('on');
+  });
+  btn.classList.add('on');
+  renderTable();
+}
+
+function sortBy(f) {
+  if (sortField === f) sortDir *= -1; else { sortField = f; sortDir = -1; }
+  renderTable();
+}
+
+function renderTable() {
+  const search = (document.getElementById('searchBox').value || '').toLowerCase();
+  let data = [...candidates];
+  if (gradeFilter !== 'all') data = data.filter(c => c.grade === gradeFilter);
+  if (catFilter !== 'all') data = data.filter(c => c.category === catFilter);
+  if (seasonFilter !== 'all') data = data.filter(c => c.season && c.season.label === seasonFilter);
+  if (search) data = data.filter(c => c.title.toLowerCase().includes(search) || (c.size||'').toLowerCase().includes(search));
+
+  data.sort((a,b) => {
+    const av = a[sortField]??0, bv = b[sortField]??0;
+    return (av<bv?-1:av>bv?1:0)*sortDir;
+  });
+
+  const tbody = document.getElementById('tableBody');
+  const empty = document.getElementById('emptyState');
+  if (!data.length) { tbody.innerHTML=''; empty.classList.remove('hidden'); return; }
+  empty.classList.add('hidden');
+
+  tbody.innerHTML = data.map(c => `
+    <tr style="cursor:pointer" onclick="toggleDrawer('${esc(c.title+'||'+c.size)}')">
+      <td><span class="mono dim">#${c.rank}</span></td>
+      <td>
+        <div class="iname-wrap"><div class="iname">${c.title}</div><button class="copy-btn" data-name="${c.title}" onclick="event.stopPropagation();copyItem(this)" title="Copy">C</button></div>
+        ${c.size ? `<div class="isize">${c.size}</div>` : ''}
+        ${c.live_spread_viable ? '<span class="tag tg" style="font-size:7px;">LIVE</span>' : c.lowest_ask ? '<span class="tag tr" style="font-size:7px;">NO SPREAD</span>' : '<span class="tag tr" style="font-size:7px;">NO ASK</span>'}
+        ${c.season ? `<span class="tag" style="font-size:7px;background:${c.season.color}22;color:${c.season.color};border-color:${c.season.color}44;">${c.season.label}</span>` : ''}
+      </td>
+      <td><span class="tag tb" style="font-size:7px;">${c.category}</span></td>
+      <td><span class="mono ${c.vol_31d>=20?'pos':c.vol_31d>=8?'neu':'dim'}">${c.vol_31d}</span></td>
+      <td><span class="mono ${c.dispersion_pct>=35?'pos':c.dispersion_pct>=18?'neu':'neg'}">${c.dispersion_pct.toFixed(0)}%</span></td>
+      <td><span class="mono neu">$${c.lowball_bid.toFixed(2)}</span></td>
+      <td><span class="mono neu">$${c.exit_price.toFixed(2)}</span></td>
+      <td><span class="mono ${c.gross_spread>=40?'pos':c.gross_spread>=20?'neu':'neg'}">$${c.gross_spread.toFixed(2)}</span></td>
+      <td><span class="mono ${c.net_profit>=25?'pos':c.net_profit>=10?'neu':'neg'}">$${c.net_profit.toFixed(2)}</span></td>
+      <td><span class="mono ${c.roi>=20?'pos':c.roi>=10?'neu':'neg'}">${c.roi.toFixed(1)}%</span></td>
+      <td><span class="score-num ${c.composite>=7?'pos':c.composite>=5?'neu':'neg'}">${c.composite}</span></td>
+      <td><div class="grade-badge g${c.grade.toLowerCase()}">${c.grade}</div></td>
+      <td><span class="tag ${c.trend==='Uptrend'?'tg':c.trend==='Range-bound'?'tb':c.trend.includes('Soft')?'ty':'tr'}" style="font-size:7px;">${c.trend}</span></td>
+    </tr>
+    <tr id="drow-${esc(c.title+'||'+c.size)}">
+      <td colspan="13" style="padding:0;">
+        <div class="drawer" id="drawer-${esc(c.title+'||'+c.size)}">
+          ${buildDrawer(c)}
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function esc(k) { return k.replace(/[^a-zA-Z0-9]/g,'_'); }
+
+function copyItem(btn) {
+  var name = btn.getAttribute('data-name') || '';
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(name).then(function() {
+      btn.textContent = 'OK'; btn.classList.add('copied');
+      setTimeout(function(){ btn.textContent = 'C'; btn.classList.remove('copied'); }, 1500);
+    }).catch(function() {
+      fallbackCopy(btn, name);
+    });
+  } else {
+    fallbackCopy(btn, name);
+  }
+}
+
+function fallbackCopy(btn, name) {
+  var ta = document.createElement('textarea');
+  ta.value = name; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.focus(); ta.select();
+  try { document.execCommand('copy'); } catch(e) {}
+  document.body.removeChild(ta);
+  btn.textContent = 'OK';
+  setTimeout(function(){ btn.textContent = 'C'; }, 1500);
+}
+
+function toggleDrawer(key) {
+  const d = document.getElementById('drawer-'+esc(key));
+  if (!d) return;
+  const open = d.classList.contains('open');
+  document.querySelectorAll('.drawer.open').forEach(x => x.classList.remove('open'));
+  if (!open) d.classList.add('open');
+}
+
+function buildDrawer(c) {
+  const s = c.scores;
+  const seasonHtml = c.season ? `
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);">
+      <span style="font-family:var(--mono);font-size:9px;color:var(--text2);letter-spacing:0.08em;flex:1;">SEASON STATUS</span>
+      <span style="font-family:var(--mono);font-size:10px;font-weight:600;color:${c.season.color};">${c.season.label}</span>
+      <span style="font-family:var(--mono);font-size:8px;color:var(--text2);">${c.season.score >= 1.1 ? '▲ Demand boosted' : c.season.score < 0.9 ? '▼ Demand suppressed' : '→ Neutral'}</span>
+    </div>` : '';
+  return `
+    <div>
+      <h4>PRICE INTELLIGENCE</h4>
+      ${seasonHtml}
+      ${dr('Median Sale Price','$'+c.median.toFixed(2))}
+      ${dr('10th Percentile (floor)','$'+c.p10.toFixed(2))}
+      ${dr('25th Percentile','$'+c.p25.toFixed(2))}
+      ${dr('75th Percentile','$'+c.p75.toFixed(2))}
+      ${dr('90th Percentile','$'+c.p90.toFixed(2))}
+      ${dr('All-time Range','$'+c.price_min.toFixed(0)+' - $'+c.price_max.toFixed(0))}
+      ${dr('Dispersion vs Median',c.dispersion_pct.toFixed(1)+'%')}
+      ${dr('Low-Sale Rate',c.low_sale_rate+'% of sales   bid zone')}
+      ${dr('Current Lowest Ask',c.lowest_ask ? '$'+c.lowest_ask : 'N/A')}
+      ${dr('Current Highest Bid',c.highest_offer ? '$'+c.highest_offer : 'N/A')}
+      ${dr('Last Sale','$'+(c.last_sale||0).toFixed(2))}
+      ${dr('Flex/Dump Sale Rate',c.flex_rate+'% of sales flagged as flex')}
+      ${dr('Currency Normalized',c.currency ? c.currency+' -> USD' : 'USD')}
+      ${dr('Price Trend',c.trend+' ('+c.trendFactor+'%)')}
+    </div>
+    <div>
+      <h4>TRADE ECONOMICS</h4>
+      ${dr('Estimated Lowball Bid','$'+c.lowball_bid.toFixed(2))}
+      ${dr('Inbound Shipping','$'+getFees().shipIn.toFixed(2))}
+      ${dr('Total Acquisition Cost','$'+(c.lowball_bid+getFees().shipIn).toFixed(2))}
+      ${dr('Estimated Exit Price','$'+c.exit_price.toFixed(2))}
+      ${dr('Gross Spread','$'+c.gross_spread.toFixed(2))}
+      ${dr('StockX Seller Fee','~$'+(c.exit_price*(getFees().sellerPct+getFees().processPct)).toFixed(2))}
+      ${dr('Outbound Shipping','$'+getFees().shipOut.toFixed(2))}
+      ${dr('Estimated Net Profit','$'+c.net_profit.toFixed(2))}
+      ${dr('Estimated ROI',c.roi.toFixed(1)+'%')}
+      ${dr('Exit Speed', (c.est_days_to_exit||'?')+'d to sell')}
+      ${dr('Tier 1 Bid (beat top)', c.tier1_bid ? '$'+c.tier1_bid.toFixed(0)+' -> $'+(c.tier1_net||0).toFixed(0)+' net' : 'N/A')}
+      ${dr('Tier 2 Bid (lowball)', '$'+c.tier2_bid.toFixed(0)+' -> $'+(c.tier2_net||0).toFixed(0)+' net')}
+      ${dr('Tier 3 Bid (floor P10)', '$'+c.tier3_bid.toFixed(0)+' -> $'+(c.tier3_net||0).toFixed(0)+' net')}
+      ${dr('31-Day Sales Volume',c.vol_31d+' units')}
+      ${dr('3-Month Sales Volume',c.vol_3m+' units')}
+      ${dr('6-Month Sales Volume',c.vol_6m+' units')}
+      ${dr('Total Sales in Dataset',c.prices_count+' transactions (12mo)')}
+    </div>
+    <div>
+      <h4>SCORE BREAKDOWN</h4>
+      <div style="margin-top:8px;">
+        ${sb('Liquidity',s.liq)}
+        ${sb('Price Dispersion',s.disp)}
+        ${sb('Lowball Fill Potential',s.fill)}
+        ${sb('Exit Liquidity',s.exitLiq)}
+        ${sb('Spread Quality',s.spreadScore)}
+        ${sb('Repeatability',s.rep)}
+        ${sb('Capital Efficiency',s.capEff)}
+        ${sb('Risk Score',s.risk)}
+      </div>
+      <div style="margin-top:16px;font-family:var(--mono);font-size:10px;color:var(--text3);">
+        COMPOSITE &nbsp;
+        <span style="color:var(--green);font-size:18px;font-weight:700;">${c.composite}</span>
+        <span style="color:var(--text3)">/10</span>
+        &nbsp;&nbsp;GRADE &nbsp;
+        <span class="grade-badge g${c.grade.toLowerCase()}" style="display:inline-flex;">${c.grade}</span>
+      </div>
+    </div>
+  `;
+}
+
+function dr(k,v) { return `<div class="dr"><span class="dk">${k}</span><span class="dv">${v}</span></div>`; }
+function sb(label, val) {
+  const color = val>=7?'var(--green)':val>=5?'var(--yellow)':val>=3?'var(--blue)':'var(--red)';
+  return `<div class="sbar-row">
+    <div class="sbar-lbl">${label}</div>
+    <div class="sbar-track"><div class="sbar-fill" style="width:${val*10}%;background:${color}"></div></div>
+    <div class="sbar-val">${val}</div>
+  </div>`;
+}
+
+function renderByItem() {
+  const byTitle = {};
+  candidates.forEach(c => {
+    if (!byTitle[c.title]) byTitle[c.title] = [];
+    byTitle[c.title].push(c);
+  });
+
+  const sorted = Object.entries(byTitle).sort((a,b) => {
+    return Math.max(...b[1].map(x=>x.composite)) - Math.max(...a[1].map(x=>x.composite));
+  }).slice(0,40);
+
+  document.getElementById('byItemContent').innerHTML = sorted.map(([title, rows]) => `
+    <div style="margin-bottom:32px;">
+      <div style="font-family:var(--display);font-size:22px;letter-spacing:0.06em;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border2);display:flex;align-items:baseline;gap:12px;">
+        ${title}
+        <span style="font-family:var(--mono);font-size:10px;color:var(--text3);font-weight:400;">${rows.length} SIZE(S) &nbsp; &nbsp; ${rows[0].category.toUpperCase()}</span>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>SIZE</th><th>NET PROFIT</th><th>ROI</th><th>SCORE</th><th>GRADE</th>
+            <th>LOWBALL BID</th><th>EXIT PRICE</th><th>31D VOL</th><th>DISPERSION</th>
+            <th>LOW-SALE RATE</th><th>TREND</th>
+          </tr></thead>
+          <tbody>
+            ${rows.sort((a,b)=>b.composite-a.composite).map(r=>`
+              <tr>
+                <td class="mono">${r.size||'N/A'}</td>
+                <td><span class="mono ${r.net_profit>=25?'pos':r.net_profit>=0?'neu':'neg'}">$${r.net_profit.toFixed(2)}</span></td>
+                <td><span class="mono ${r.roi>=20?'pos':r.roi>=10?'neu':'neg'}">${r.roi.toFixed(1)}%</span></td>
+                <td><span class="score-num ${r.composite>=7?'pos':r.composite>=5?'neu':'neg'}">${r.composite}</span></td>
+                <td><div class="grade-badge g${r.grade.toLowerCase()}">${r.grade}</div></td>
+                <td class="mono neu">$${r.lowball_bid.toFixed(2)}</td>
+                <td class="mono neu">$${r.exit_price.toFixed(2)}</td>
+                <td class="mono ${r.vol_31d>=20?'pos':r.vol_31d>=8?'neu':'dim'}">${r.vol_31d}</td>
+                <td class="mono ${r.dispersion_pct>=35?'pos':r.dispersion_pct>=18?'neu':'neg'}">${r.dispersion_pct.toFixed(0)}%</td>
+                <td class="mono ${r.low_sale_rate>=10?'pos':r.low_sale_rate>=4?'neu':'dim'}">${r.low_sale_rate}%</td>
+                <td><span class="tag ${r.trend==='Uptrend'?'tg':r.trend==='Range-bound'?'tb':r.trend.includes('Soft')?'ty':'tr'}" style="font-size:7px;">${r.trend}</span></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderRejects() {
+  document.getElementById('rejectsContent').innerHTML = `
+    <p style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:20px;letter-spacing:0.05em;">
+      ${rejects.length} item-size combinations failed minimum criteria. Do not allocate bids to these.
+    </p>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>ITEM / SIZE</th><th>CATEGORY</th><th>REASON REJECTED</th>
+          <th>SALES COUNT</th><th>NET PROFIT</th><th>SCORE</th>
+        </tr></thead>
+        <tbody>
+          ${rejects.slice(0,150).map(r=>`
+            <tr>
+              <td>
+                <div class="iname">${r.title}</div>
+                ${r.size?`<div class="isize">${r.size}</div>`:''}
+              </td>
+              <td><span class="tag tb" style="font-size:7px;">${r.category}</span></td>
+              <td style="font-family:var(--mono);font-size:10px;color:var(--red);">${r.rejectReason}</td>
+              <td class="mono dim">${r.prices_count}</td>
+              <td class="mono ${r.net_profit>=0?'dim':'neg'}">$${r.net_profit.toFixed(2)}</td>
+              <td class="mono dim">${r.composite}/10</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+// --- EXPORT -------------------------------------------------------------------
+function exportCSV() {
+  const cols = ['rank','title','size','category','grade','composite','net_profit','roi',
+    'lowball_bid','exit_price','gross_spread','vol_31d','vol_3m','vol_6m',
+    'dispersion_pct','low_sale_rate','flex_rate','trend','median','p10','p75',
+    'lowest_ask','highest_offer','currency'];
+  const rows = [cols.join(',')];
+  candidates.forEach(c => {
+    rows.push(cols.map(col => {
+      const v = c[col]??'';
+      return String(v).includes(',') ? `"${v}"` : v;
+    }).join(','));
+  });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([rows.join('\n')], {type:'text/csv'}));
+  a.download = 'lowball_candidates_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+}
+
+// --- AI ADVISOR ---------------------------------------------------------------
+function initChat() {
+  const top = candidates.slice(0,10).map(c =>
+    `${c.rank}. ${c.title}${c.size?' ('+c.size+')':''} | Grade ${c.grade} | Score ${c.composite} | Net $${c.net_profit.toFixed(0)} | ROI ${c.roi.toFixed(1)}% | Bid $${c.lowball_bid.toFixed(0)} | Exit $${c.exit_price.toFixed(0)} | 31D Vol: ${c.vol_31d} | Disp: ${c.dispersion_pct.toFixed(0)}% | Low-sale rate: ${c.low_sale_rate}% | Trend: ${c.trend}`
+  ).join('\n');
+
+  const catCounts = {};
+  candidates.forEach(c => { catCounts[c.category] = (catCounts[c.category]||0)+1; });
+
+  const systemPrompt = `You are the StockX Lowball Bid Agent AI Advisor. You have analyzed real StockX market data and scored candidates for a mass lowball bid strategy.
+
+STRATEGY CONTEXT:
+The user places disciplined lowball bids across many liquid StockX items. Most bids won't be accepted. When a motivated seller dumps inventory at a low price, the bid captures it. The item is then relisted just below the current lowest ask to exit quickly.
+
+DATASET SUMMARY:
+- Total candidates scored: ${candidates.length}
+- Grade A: ${candidates.filter(c=>c.grade==='A').length}
+- Grade B: ${candidates.filter(c=>c.grade==='B').length}  
+- Grade C: ${candidates.filter(c=>c.grade==='C').length}
+- Rejected: ${rejects.length}
+- Categories: ${JSON.stringify(catCounts)}
+
+TOP 10 CANDIDATES:
+${top}
+
+FULL TOP 30 DATA:
+${JSON.stringify(candidates.slice(0,30).map(c=>({
+  title:c.title, size:c.size, category:c.category, grade:c.grade,
+  composite:c.composite, net_profit:c.net_profit, roi:c.roi,
+  lowball_bid:c.lowball_bid, exit_price:c.exit_price, gross_spread:c.gross_spread,
+  vol_31d:c.vol_31d, dispersion_pct:c.dispersion_pct, low_sale_rate:c.low_sale_rate,
+  trend:c.trend, scores:c.scores
+})), null, 2)}
+
+Answer questions directly and practically. Be specific with numbers. Focus on actionable bid strategy advice. Be skeptical and selective -- only recommend items where the math clearly works.`;
+
+  chatHistory = [{ role:'system', content: systemPrompt }];
+
+  const aCount = candidates.filter(c=>c.grade==='A').length;
+  const bCount = candidates.filter(c=>c.grade==='B').length;
+
+  document.getElementById('chatWrap').innerHTML = `
+    <div class="chat-msg">
+      <div class="cavatar cav-ai">AI</div>
+      <div class="cbubble">
+        Analysis complete. Scored <strong>${candidates.length} item-size combinations</strong> across your dataset.<br><br>
+        <strong style="color:var(--green)">${aCount} Grade A</strong> and <strong style="color:var(--yellow)">${bCount} Grade B</strong> candidates meet your minimum criteria.<br><br>
+        Ask me anything -- which items to prioritize, optimal bid levels, which sizes to focus on, or why a specific item scored the way it did.
+      </div>
+    </div>
+  `;
+}
+
+async function sendChat() {
+  const input = document.getElementById('chatIn');
+  const msg = input.value.trim();
+  if (!msg) return;
+
+  // Check API key
+  const apiKey = document.getElementById('claudeApiKey').value.trim();
+  if (!apiKey || !apiKey.startsWith('sk-ant-')) {
+    const wrap = document.getElementById('chatWrap');
+    wrap.innerHTML += `<div class="chat-msg"><div class="cavatar cav-ai">AI</div><div class="cbubble" style="color:var(--accent4)">Please paste your Claude API key in the field above first. Get it from console.anthropic.com</div></div>`;
+    wrap.scrollTop = wrap.scrollHeight;
+    return;
+  }
+
+  const wrap = document.getElementById('chatWrap');
+  const btn = document.getElementById('chatSend');
+  input.value = '';
+  btn.disabled = true;
+
+  wrap.innerHTML += `
+    <div class="chat-msg" style="flex-direction:row-reverse">
+      <div class="cavatar cav-u">YOU</div>
+      <div class="cbubble user">${msg}</div>
+    </div>
+    <div class="typing" id="typingDot">Analyzing...</div>
+  `;
+  wrap.scrollTop = wrap.scrollHeight;
+  chatHistory.push({ role:'user', content:msg });
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key': document.getElementById('claudeApiKey').value.trim(),
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        system: chatHistory[0].content,
+        messages: chatHistory.slice(1),
+      })
+    });
+    const data = await res.json();
+    const reply = data.content?.[0]?.text || 'Could not generate response.';
+    chatHistory.push({ role:'assistant', content:reply });
+    document.getElementById('typingDot')?.remove();
+    wrap.innerHTML += `
+      <div class="chat-msg">
+        <div class="cavatar cav-ai">AI</div>
+        <div class="cbubble">${reply.replace(/\n/g,'<br>')}</div>
+      </div>
+    `;
+  } catch(e) {
+    document.getElementById('typingDot')?.remove();
+    wrap.innerHTML += `<div class="chat-msg"><div class="cavatar cav-ai">AI</div><div class="cbubble" style="color:var(--red)">Connection error. Try again.</div></div>`;
+  }
+  btn.disabled = false;
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+// --- TABS ---------------------------------------------------------------------
+function switchTab(id, el) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-'+id).classList.add('active');
+  // Lazy-render new tabs on first visit
+  if (id === 'feed') renderFeed();
+  if (id === 'exitconf') renderExitConf();
+  if (id === 'velocity') renderVelocity();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MODULE 1 — DAILY OPPORTUNITY FEED
+// ═══════════════════════════════════════════════════════════════════════════
+
+function renderFeed() {
+  if (!candidates.length) return;
+
+  const now = new Date();
+  document.getElementById('feedDate').textContent =
+    now.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric', year:'numeric' }).toUpperCase();
+
+  // Feed gate: exclude items with no recent sales, no profit, or no spread
+  // Kept minimal — scoring and grading handle the rest
+  const feedEligible = candidates.filter(c =>
+    c.vol_31d >= 1 &&               // must have sold at least once in 31 days
+    c.net_profit > 0 &&             // must be profitable
+    !['D','F'].includes(c.grade)    // must have passed minimum grade threshold
+  );
+
+  // Score eligible candidates
+  const scored = feedEligible.map(c => ({
+    ...c,
+    feedScore: c.composite * (c.season ? c.season.score : 1.0) +
+               (c.net_profit / 200) + // tiny net-profit nudge
+               (c.low_sale_rate / 100) * 2 // fill potential nudge
+  }));
+  scored.sort((a,b) => b.feedScore - a.feedScore);
+
+  // Tier split: Top Picks (A+B, score>=6.5), Watchlist (A+B, rest), Conditional (C)
+  const topPicks  = scored.filter(c => ['A','B'].includes(c.grade) && c.feedScore >= 6.5).slice(0, 12);
+  const watchlist = scored.filter(c => ['A','B'].includes(c.grade) && c.feedScore < 6.5).slice(0, 8);
+  const seasonal  = scored.filter(c => c.season && c.season.label === 'IN SEASON' && c.grade !== 'F').slice(0, 6);
+
+  // Summary bar
+  const totalBidValue = topPicks.reduce((s,c) => s + c.lowball_bid, 0);
+  const avgNet = topPicks.length ? topPicks.reduce((s,c)=>s+c.net_profit,0)/topPicks.length : 0;
+  const avgExit = topPicks.length ? topPicks.reduce((s,c)=>s+c.est_days_to_exit,0)/topPicks.length : 0;
+  document.getElementById('feedSummary').innerHTML = `
+    <div><span>TOP PICKS TODAY</span><strong>${topPicks.length}</strong></div>
+    <div><span>TOTAL BID EXPOSURE</span><strong>$${totalBidValue.toFixed(0)}</strong></div>
+    <div><span>AVG NET PROFIT</span><strong style="color:var(--green)">$${avgNet.toFixed(0)}</strong></div>
+    <div><span>AVG EXIT DAYS</span><strong>${avgExit.toFixed(1)}d</strong></div>
+    <div><span>IN-SEASON PICKS</span><strong style="color:var(--green)">${seasonal.length}</strong></div>
+    <div><span>DATA FRESHNESS</span><strong style="color:var(--blue)">TODAY</strong></div>
+  `;
+
+  const renderCards = (list) => list.map((c, i) => {
+    const gradeClass = c.grade === 'A' ? 'grade-a' : c.grade === 'B' ? 'grade-b' : 'grade-c';
+    const netClass   = c.net_profit >= 30 ? 'pos' : c.net_profit >= 12 ? 'neu' : 'neg';
+    const exitLabel  = c.est_days_to_exit <= 3 ? 'FAST EXIT' : c.est_days_to_exit <= 7 ? 'MED EXIT' : 'SLOW EXIT';
+    const exitColor  = c.est_days_to_exit <= 3 ? 'var(--green)' : c.est_days_to_exit <= 7 ? 'var(--yellow)' : 'var(--red)';
+    return `
+    <div class="feed-card ${gradeClass}" onclick="goToCandidate('${esc(c.title+'||'+c.size)}')">
+      <div class="feed-rank">#${c.rank} · ${c.composite}/10</div>
+      <div class="feed-name">${c.title}</div>
+      <div class="feed-size">${c.size || 'ONE SIZE'} · ${c.category.toUpperCase()}</div>
+      <div class="feed-metrics">
+        <div class="feed-metric">
+          <div class="feed-metric-val ${netClass}">$${c.net_profit.toFixed(0)}</div>
+          <div class="feed-metric-label">NET PROFIT</div>
+        </div>
+        <div class="feed-metric">
+          <div class="feed-metric-val neu">$${c.lowball_bid.toFixed(0)}</div>
+          <div class="feed-metric-label">BID ZONE</div>
+        </div>
+        <div class="feed-metric">
+          <div class="feed-metric-val neu">${c.roi.toFixed(0)}%</div>
+          <div class="feed-metric-label">ROI</div>
+        </div>
+        <div class="feed-metric">
+          <div class="feed-metric-val" style="color:${exitColor}">${c.est_days_to_exit}d</div>
+          <div class="feed-metric-label">EXIT EST</div>
+        </div>
+      </div>
+      <div class="feed-tags">
+        <div class="grade-badge g${c.grade.toLowerCase()}" style="font-size:10px;">${c.grade}</div>
+        ${c.season ? `<span class="tag" style="font-size:7px;background:${c.season.color}22;color:${c.season.color};border-color:${c.season.color}44;">${c.season.label}</span>` : ''}
+        <span class="tag" style="font-size:7px;color:${exitColor};border-color:${exitColor}44;background:${exitColor}11;">${exitLabel}</span>
+        <span class="tag tb" style="font-size:7px;">${c.dispersion_pct.toFixed(0)}% DISP</span>
+      </div>
+      <div class="feed-action">
+        <span>📦 ${c.vol_31d} sold/31d · ${c.low_sale_rate}% low-fill rate</span>
+        <div class="bid-pill">BID $${c.lowball_bid.toFixed(0)}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('feedContent').innerHTML = `
+    ${topPicks.length ? `
+      <div class="feed-section-title">🟢 TODAY'S TOP PICKS — Place these bids first</div>
+      <div class="feed-grid">${renderCards(topPicks)}</div>
+    ` : '<div class="feed-empty">No top picks yet — run analysis first.</div>'}
+    ${seasonal.length ? `
+      <div class="feed-section-title">☀️ IN-SEASON BONUS — Seasonality working in your favor</div>
+      <div class="feed-grid">${renderCards(seasonal)}</div>
+    ` : ''}
+    ${watchlist.length ? `
+      <div class="feed-section-title">👀 WATCHLIST — Good scores, lower urgency</div>
+      <div class="feed-grid">${renderCards(watchlist)}</div>
+    ` : ''}
+  `;
+}
+
+function goToCandidate(key) {
+  // Switch to candidates tab and open the drawer
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  document.querySelector('.tab').classList.add('active');
+  document.getElementById('tab-candidates').classList.add('active');
+  setTimeout(() => toggleDrawer(key), 100);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MODULE 2 — EXIT CONFIDENCE SCORE
+// ═══════════════════════════════════════════════════════════════════════════
+
+let ecFilter = 'all';
+
+function setEcFilter(f, btn) {
+  ecFilter = f;
+  document.querySelectorAll('#ecFilterBar .fbtn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  renderExitConf();
+}
+
+function calcExitConf(c) {
+  // 1. Sales Velocity (0-25): how fast does it sell in 31d
+  const velScore = c.vol_31d >= 30 ? 25 : c.vol_31d >= 15 ? 20 : c.vol_31d >= 8 ? 14 : c.vol_31d >= 3 ? 8 : 3;
+
+  // 2. Ask Depth Signal (0-20): is there a live ask above exit price
+  const askGap = c.lowest_ask && c.exit_price ? c.lowest_ask - c.exit_price : 0;
+  const askScore = c.lowest_ask
+    ? (askGap >= 5 ? 20 : askGap >= 0 ? 14 : 6)
+    : 8; // no ask data = neutral
+
+  // 3. Price Stability (0-20): low dispersion = stable = easier to exit
+  const stabScore = c.dispersion_pct <= 15 ? 20 : c.dispersion_pct <= 25 ? 16 :
+                    c.dispersion_pct <= 40 ? 11 : c.dispersion_pct <= 60 ? 6 : 3;
+
+  // 4. Trend (0-20): uptrend or range-bound = safe exit
+  const trendScore = c.trend === 'Uptrend' ? 20 : c.trend === 'Range-bound' ? 16 :
+                     c.trend === 'Soft decline' ? 9 : 3;
+
+  // 5. Spread Margin (0-15): how much buffer do we have at exit
+  const marginScore = c.net_profit >= 50 ? 15 : c.net_profit >= 30 ? 12 :
+                      c.net_profit >= 15 ? 8 : c.net_profit >= 5 ? 4 : 0;
+
+  const total = velScore + askScore + stabScore + trendScore + marginScore;
+  return {
+    total: Math.min(100, total),
+    vel: velScore, ask: askScore, stab: stabScore,
+    trend: trendScore, margin: marginScore
+  };
+}
+
+function renderExitConf() {
+  if (!candidates.length) return;
+
+  const cats = ['sneakers','apparel','collectibles','electronics','luxury'];
+  const confFilters = ['high','mid','low'];
+
+  let data = candidates.map(c => ({ ...c, ec: calcExitConf(c) }));
+  data.sort((a,b) => b.ec.total - a.ec.total);
+
+  if (confFilters.includes(ecFilter)) {
+    data = data.filter(c =>
+      ecFilter === 'high' ? c.ec.total >= 70 :
+      ecFilter === 'mid'  ? c.ec.total >= 45 && c.ec.total < 70 :
+      c.ec.total < 45
+    );
+  } else if (cats.includes(ecFilter)) {
+    data = data.filter(c => c.category === ecFilter);
+  }
+
+  data = data.slice(0, 60);
+
+  document.getElementById('ecContent').innerHTML = data.map(c => {
+    const ec = c.ec;
+    const level = ec.total >= 70 ? 'high' : ec.total >= 45 ? 'mid' : 'low';
+    const label = level === 'high' ? 'HIGH' : level === 'mid' ? 'MEDIUM' : 'LOW';
+    const verdict = level === 'high'
+      ? `Strong exit liquidity. ${c.vol_31d} sales/31d with ${c.trend.toLowerCase()} price trend. List at $${c.exit_price.toFixed(0)} — expect sale within ~${c.est_days_to_exit}d.`
+      : level === 'mid'
+      ? `Moderate exit confidence. ${c.dispersion_pct.toFixed(0)}% price spread adds some uncertainty. Exit possible but monitor closely at $${c.exit_price.toFixed(0)}.`
+      : `Elevated dead-inventory risk. Low velocity (${c.vol_31d}/31d) or declining trend. Only bid if spread is exceptional.`;
+
+    const bars = [
+      { label:'SALES VELOCITY', val: ec.vel, max:25, color:'var(--blue)' },
+      { label:'ASK DEPTH',      val: ec.ask, max:20, color:'var(--green)' },
+      { label:'PRICE STABILITY',val: ec.stab,max:20, color:'var(--yellow)' },
+      { label:'PRICE TREND',    val: ec.trend,max:20,color:'var(--accent3)' },
+      { label:'SPREAD MARGIN',  val: ec.margin,max:15,color:'var(--green)' },
+    ];
+
+    return `
+    <div class="ec-card">
+      <div class="ec-top">
+        <div>
+          <div class="ec-name">${c.title}</div>
+          <div class="ec-size">${c.size || 'ONE SIZE'} · ${c.category.toUpperCase()} · GRADE ${c.grade}</div>
+        </div>
+        <div class="ec-score-ring ${level}">
+          <div class="ec-score-num">${ec.total}</div>
+          <div class="ec-score-label">${label}</div>
+        </div>
+      </div>
+      <div class="ec-bars">
+        ${bars.map(b => `
+          <div class="ec-bar-row">
+            <div class="ec-bar-label">${b.label}</div>
+            <div class="ec-bar-track">
+              <div class="ec-bar-fill" style="width:${(b.val/b.max*100).toFixed(0)}%;background:${b.color};"></div>
+            </div>
+            <div class="ec-bar-val" style="color:${b.color}">${b.val}/${b.max}</div>
+          </div>
+        `).join('')}
+      </div>
+      <div class="ec-verdict ${level}">${verdict}</div>
+    </div>`;
+  }).join('') || '<div class="feed-empty">No items match this filter.</div>';
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MODULE 3 — INVENTORY VELOCITY FORECAST
+// ═══════════════════════════════════════════════════════════════════════════
+
+let velFilter = 'all';
+
+function setVelFilter(f, btn) {
+  velFilter = f;
+  document.querySelectorAll('[id^="velAll"],[onclick^="setVelFilter"]').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  renderVelocity();
+}
+
+function calcVelocity(c) {
+  // Phase 1: BID → FILL (days until a motivated seller dumps into the bid)
+  // Based on low_sale_rate and vol_31d
+  const fillDays = c.low_sale_rate >= 15 ? 3
+    : c.low_sale_rate >= 8 ? 7
+    : c.low_sale_rate >= 4 ? 14
+    : c.low_sale_rate >= 2 ? 21 : 30;
+
+  // Phase 2: SHIP + AUTH (StockX verification, fixed ~5-9 days)
+  const shipDays = 7; // StockX standard auth window
+
+  // Phase 3: LIST → EXIT (days to sell after listing at ask-$1)
+  const exitDays = c.est_days_to_exit || (
+    c.vol_31d >= 30 ? 2 : c.vol_31d >= 15 ? 4 : c.vol_31d >= 7 ? 7 : c.vol_31d >= 3 ? 14 : 21
+  );
+
+  const totalDays = fillDays + shipDays + exitDays;
+
+  // Capital efficiency: net per day
+  const netPerDay = c.net_profit > 0 && totalDays > 0 ? c.net_profit / totalDays : 0;
+
+  // Speed tier
+  const speed = totalDays <= 16 ? 'fast' : totalDays <= 28 ? 'med' : 'slow';
+  const speedLabel = speed === 'fast' ? 'FAST CYCLE' : speed === 'med' ? 'MED CYCLE' : 'SLOW CYCLE';
+
+  // Risk flags
+  const risks = [];
+  if (c.trend === 'Declining') risks.push('⚠ Declining price trend — exit window shrinking');
+  if (c.dispersion_pct > 50) risks.push('⚠ High price variance — exit price uncertain');
+  if (c.vol_31d < 5) risks.push('⚠ Low sales velocity — exit may take longer than estimated');
+  if (exitDays >= 14 && c.net_profit < 20) risks.push('⚠ Slow exit + thin margin = capital efficiency concern');
+
+  // Insight
+  const insight = `Expect ~${fillDays}d before a motivated seller fills this bid at $${c.lowball_bid.toFixed(0)}. ` +
+    `After StockX receives and authenticates (~7d), list at $${c.exit_price.toFixed(0)}. ` +
+    `Historical velocity suggests a buyer within ~${exitDays}d. ` +
+    `Total capital tied up ~${totalDays} days. Net/day: $${netPerDay.toFixed(2)}.`;
+
+  return { fillDays, shipDays, exitDays, totalDays, netPerDay, speed, speedLabel, risks, insight };
+}
+
+function renderVelocity() {
+  if (!candidates.length) return;
+
+  let data = candidates.map(c => ({ ...c, vel: calcVelocity(c) }));
+  data.sort((a,b) => a.vel.totalDays - b.vel.totalDays); // fastest first
+
+  if (velFilter === 'fast') data = data.filter(c => c.vel.speed === 'fast');
+  if (velFilter === 'slow') data = data.filter(c => c.vel.speed === 'slow');
+
+  data = data.slice(0, 60);
+
+  document.getElementById('velContent').innerHTML = data.map(c => {
+    const v = c.vel;
+    const total = v.totalDays;
+
+    // Timeline bar widths (as % of total)
+    const fillW  = ((v.fillDays / total) * 100).toFixed(0);
+    const shipW  = ((v.shipDays / total) * 100).toFixed(0);
+    const exitW  = ((v.exitDays / total) * 100).toFixed(0);
+
+    const badgeClass = v.speed;
+
+    return `
+    <div class="vel-card">
+      <div class="vel-top">
+        <div>
+          <div class="vel-name">${c.title}</div>
+          <div class="vel-size">${c.size || 'ONE SIZE'} · ${c.category.toUpperCase()}</div>
+        </div>
+        <div class="vel-badge ${badgeClass}">${v.speedLabel}</div>
+      </div>
+
+      <div class="vel-timeline">
+        <div class="vel-track">
+          <div class="vel-segment" style="left:0;width:${fillW}%;background:var(--yellow);opacity:0.8;"></div>
+          <div class="vel-segment" style="left:${fillW}%;width:${shipW}%;background:var(--blue);opacity:0.8;"></div>
+          <div class="vel-segment" style="left:${parseInt(fillW)+parseInt(shipW)}%;width:${exitW}%;background:var(--green);opacity:0.8;"></div>
+        </div>
+        <div class="vel-milestones">
+          <span>BID PLACED</span>
+          <span>FILL ~${v.fillDays}d</span>
+          <span>RECEIVED ~${v.fillDays+v.shipDays}d</span>
+          <span>SOLD ~${v.totalDays}d</span>
+        </div>
+      </div>
+
+      <div class="vel-stats">
+        <div class="vel-stat">
+          <div class="vel-stat-val" style="color:var(--yellow)">${v.fillDays}d</div>
+          <div class="vel-stat-label">BID→FILL EST</div>
+        </div>
+        <div class="vel-stat">
+          <div class="vel-stat-val" style="color:var(--blue)">${v.shipDays}d</div>
+          <div class="vel-stat-label">SHIP+AUTH</div>
+        </div>
+        <div class="vel-stat">
+          <div class="vel-stat-val" style="color:var(--green)">${v.exitDays}d</div>
+          <div class="vel-stat-label">LIST→EXIT EST</div>
+        </div>
+      </div>
+
+      <div class="vel-stats" style="margin-top:-4px;">
+        <div class="vel-stat">
+          <div class="vel-stat-val">${v.totalDays}d</div>
+          <div class="vel-stat-label">TOTAL CYCLE</div>
+        </div>
+        <div class="vel-stat">
+          <div class="vel-stat-val" style="color:var(--green)">$${c.net_profit.toFixed(0)}</div>
+          <div class="vel-stat-label">NET PROFIT</div>
+        </div>
+        <div class="vel-stat">
+          <div class="vel-stat-val" style="color:${v.netPerDay>=1.5?'var(--green)':v.netPerDay>=0.8?'var(--yellow)':'var(--red)'}">$${v.netPerDay.toFixed(2)}/d</div>
+          <div class="vel-stat-label">NET/DAY</div>
+        </div>
+      </div>
+
+      <div class="vel-insight">${v.insight}</div>
+      ${v.risks.length ? `<div class="vel-risk">${v.risks.join('<br>')}</div>` : ''}
+    </div>`;
+  }).join('') || '<div class="feed-empty">No items match this filter.</div>';
+}
+
+// --- UTILS --------------------------------------------------------------------
+function showLoading(msg) {
+  document.getElementById('loadingMsg').textContent = msg;
+  document.getElementById('progBar').style.width = '0%';
+  document.getElementById('loading').classList.add('show');
+}
+function updateProgress(pct, msg) {
+  document.getElementById('progBar').style.width = pct+'%';
+  if (msg) document.getElementById('loadingMsg').textContent = msg;
+}
+function hideLoading() { document.getElementById('loading').classList.remove('show'); }
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 3500);
+}
+function setStatus(msg, live) {
+  document.getElementById('statusDot').className = 'logo-dot' + (live?' live':'');
+}
+
+// Restore Claude API key from localStorage on load
+window.addEventListener('DOMContentLoaded', function() {
+  const saved = localStorage.getItem('claudeApiKey');
+  const keyField = document.getElementById('claudeApiKey');
+  const keyStatus = document.getElementById('keyStatus');
+  if (saved && keyField) {
+    keyField.value = saved;
+    if (keyStatus) { keyStatus.textContent = 'SET'; keyStatus.style.color = 'var(--accent)'; }
+  }
+  if (keyField) {
+    keyField.addEventListener('input', function() {
+      localStorage.setItem('claudeApiKey', this.value);
+      if (keyStatus) {
+        if (this.value.trim().startsWith('sk-ant-')) {
+          keyStatus.textContent = 'SET'; keyStatus.style.color = 'var(--accent)';
+        } else {
+          keyStatus.textContent = this.value ? 'INVALID' : 'NOT SET';
+          keyStatus.style.color = this.value ? 'var(--accent2)' : 'var(--text2)';
+        }
+      }
+    });
+  }
+});
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('/sw.js');
+  });
+}
+</script>
+</body>
+</html>
